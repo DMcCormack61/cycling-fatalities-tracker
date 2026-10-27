@@ -48,18 +48,27 @@ export function CrashAtlas({
     return () => controller.abort();
   }, []);
 
-  const laneMarks = useMemo(
-    () =>
-      lanes.map((lane) => {
-        const pts = lane.coordinates.map(([lng, lat]) => projectUs(lat, lng));
-        const mid = pts[Math.floor(pts.length / 2)];
-        const d = pts
-          .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-          .join("");
-        return { id: lane.id, d, mid };
-      }),
-    [lanes],
-  );
+  const laneMarks = useMemo(() => {
+    const cells = new Map<string, { x: number; y: number; n: number }>();
+    for (const lane of lanes) {
+      const mid = lane.coordinates[Math.floor(lane.coordinates.length / 2)];
+      if (!mid) continue;
+      const p = projectUs(mid[1], mid[0]);
+      if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) continue;
+      const gx = Math.round(p.x / 5);
+      const gy = Math.round(p.y / 5);
+      const key = `${gx}:${gy}`;
+      const cell = cells.get(key);
+      if (cell) cell.n += 1;
+      else cells.set(key, { x: gx * 5, y: gy * 5, n: 1 });
+    }
+    return [...cells.entries()].map(([id, cell]) => ({
+      id,
+      x: cell.x,
+      y: cell.y,
+      r: cell.n >= 8 ? 7.2 : cell.n >= 3 ? 5.4 : 4.2,
+    }));
+  }, [lanes]);
 
   return (
     <div className="relative overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-border)]">
@@ -110,17 +119,16 @@ export function CrashAtlas({
           </g>
           {lanesOn
             ? laneMarks.map((lane) => (
-                <g key={lane.id} pointerEvents="none">
-                  <path
-                    d={lane.d}
-                    fill="none"
-                    stroke={BIKE_LANE_COLOR}
-                    strokeWidth={1.6}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx={lane.mid.x} cy={lane.mid.y} r={2.1} fill={BIKE_LANE_COLOR} />
-                </g>
+                <circle
+                  key={lane.id}
+                  cx={lane.x}
+                  cy={lane.y}
+                  r={lane.r}
+                  fill={BIKE_LANE_COLOR}
+                  stroke="#ffffff"
+                  strokeWidth={1.2}
+                  pointerEvents="none"
+                />
               ))
             : null}
           {US_INSET_FRAMES.map((frame) => (

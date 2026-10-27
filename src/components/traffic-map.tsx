@@ -372,30 +372,45 @@ export function TrafficMap() {
     const renderer = rendererRef.current;
     if (!ready || !leaflet || !group || !renderer) return;
     group.clearLayers();
+    const drawLines = (view?.zoom ?? 0) >= 12;
     for (const lane of lanesToDraw) {
       const latlngs = lane.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
       if (latlngs.length < 2) continue;
+      if (drawLines) {
+        leaflet
+          .polyline(latlngs, {
+            renderer: renderer as never,
+            color: "#ffffff",
+            weight: 5,
+            opacity: 0.9,
+            interactive: false,
+          })
+          .addTo(group as never);
+        leaflet
+          .polyline(latlngs, {
+            renderer: renderer as never,
+            color: BIKE_LANE_COLOR,
+            weight: 3,
+            opacity: 0.95,
+            dashArray: "7 5",
+            interactive: false,
+          })
+          .addTo(group as never);
+      }
+      const mid = latlngs[Math.floor(latlngs.length / 2)];
       leaflet
-        .polyline(latlngs, {
+        .circleMarker(mid, {
           renderer: renderer as never,
+          radius: drawLines ? 4 : 5,
           color: "#ffffff",
-          weight: 5,
-          opacity: 0.9,
-          interactive: false,
-        })
-        .addTo(group as never);
-      leaflet
-        .polyline(latlngs, {
-          renderer: renderer as never,
-          color: BIKE_LANE_COLOR,
-          weight: 3,
-          opacity: 0.95,
-          dashArray: "7 5",
+          weight: 2,
+          fillColor: BIKE_LANE_COLOR,
+          fillOpacity: 0.95,
           interactive: false,
         })
         .addTo(group as never);
     }
-  }, [lanesToDraw, ready]);
+  }, [lanesToDraw, ready, view]);
 
   function go(place: TrafficPlace) {
     const reduce =

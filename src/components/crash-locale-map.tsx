@@ -49,6 +49,17 @@ function paintLanes(leaflet: LeafletNs, group: LaneGroup, lanes: BikeLane[]) {
         interactive: false,
       })
       .addTo(group as never);
+    const mid = latlngs[Math.floor(latlngs.length / 2)];
+    leaflet
+      .circleMarker(mid, {
+        radius: 4,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: BIKE_LANE_COLOR,
+        fillOpacity: 0.95,
+        interactive: false,
+      })
+      .addTo(group as never);
   }
 }
 

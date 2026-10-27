@@ -16,9 +16,10 @@ export function BikeLaneToggle({
       aria-pressed={on}
       title={BIKE_LANE_NOTE}
       onClick={() => onChange(!on)}
+      aria-label={`${BIKE_LANE_LABEL}, ${on ? "shown" : "hidden"}`}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-2 py-1 text-left text-[0.6875rem] uppercase tracking-[0.12em]",
-        on ? "text-fg" : "text-subtle",
+        "inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-left text-[0.6875rem] uppercase tracking-[0.12em]",
+        on ? "border-[#0891b2] bg-[#0891b2]/10 text-fg" : "border-current text-subtle",
         className,
       )}
     >
@@ -31,6 +32,7 @@ export function BikeLaneToggle({
         aria-hidden
       />
       {BIKE_LANE_LABEL}
+      <span className="tracking-normal">{on ? "On" : "Off"}</span>
     </button>
   );
 }
