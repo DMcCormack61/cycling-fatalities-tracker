@@ -1,4 +1,4 @@
--- Replace fictional sample crashes with curated public US cyclist KSI reports.
+-- Replace fictional sample crashes with curated public US bicycle-automotive collision reports.
 -- Mirrors src/lib/crashes-seed.ts. Applied on Vercel/Neon by scripts/migrate.mjs
 -- during npm run build, and on the PGLite fallback at startup.
 

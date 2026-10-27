@@ -11,7 +11,7 @@ function Login() {
       <div>
         <BrandMark className="h-12 w-10 text-navy" />
         <p className="mt-4 text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">
-          Cycling Fatalities Tracker
+          Bicycle-Automotive Collisions
         </p>
         <h1 className="mt-2 font-display text-3xl tracking-tight text-fg">Sign in</h1>
         <p className="mt-2 text-muted">Public Incident Reports stay open without an account.</p>

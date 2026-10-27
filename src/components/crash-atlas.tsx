@@ -77,7 +77,7 @@ export function CrashAtlas({
           <p className="text-[0.6875rem] uppercase tracking-[0.16em] text-subtle">
             United States
           </p>
-          <h2 className="font-display text-xl text-fg">Where KSI crashes were filed</h2>
+          <h2 className="font-display text-xl text-fg">Where collisions were filed</h2>
         </div>
         <p className="tabular-nums text-xs text-muted">{points.length} plotted</p>
       </div>
@@ -87,7 +87,7 @@ export function CrashAtlas({
           viewBox={`0 0 ${US_ATLAS_WIDTH} ${US_ATLAS_HEIGHT}`}
           className="h-full w-full"
           role="img"
-          aria-label="Map of United States cycling KSI crashes"
+          aria-label="Map of United States bicycle-automotive collisions"
         >
           <rect width={US_ATLAS_WIDTH} height={US_ATLAS_HEIGHT} fill="var(--color-cream)" />
           {US_INSET_FRAMES.map((frame) => (

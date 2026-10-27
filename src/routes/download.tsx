@@ -12,7 +12,7 @@ function DownloadSource() {
       <div>
         <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">Source</p>
         <h1 className="mt-2 font-display text-3xl tracking-tight text-fg">
-          Cycling Fatalities Tracker
+          Bicycle-Automotive Collisions
         </h1>
         <p className="mt-2 text-muted">
           This project lives on GitHub as{" "}
