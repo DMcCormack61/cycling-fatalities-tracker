@@ -1,11 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import type { CrashMapPlace } from "@/lib/crash-place";
+import {
+  BIKE_LANE_COLOR,
+  lanesInBounds,
+  loadBundledBikeLanes,
+  queryBikeLanes,
+  type BikeLane,
+} from "@/lib/bike-lanes";
+import { BikeLaneToggle } from "@/components/bike-lane-toggle";
 
 type Props = {
   place: CrashMapPlace;
   heading: string;
   markerLabel: string;
 };
+
+type LeafletNs = typeof import("leaflet");
+
+type LaneGroup = { clearLayers: () => void };
 
 function escapeHtml(value: string): string {
   return value
@@ -15,9 +27,49 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function paintLanes(leaflet: LeafletNs, group: LaneGroup, lanes: BikeLane[]) {
+  group.clearLayers();
+  for (const lane of lanes) {
+    const latlngs = lane.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
+    if (latlngs.length < 2) continue;
+    leaflet
+      .polyline(latlngs, {
+        color: "#ffffff",
+        weight: 5,
+        opacity: 0.9,
+        interactive: false,
+      })
+      .addTo(group as never);
+    leaflet
+      .polyline(latlngs, {
+        color: BIKE_LANE_COLOR,
+        weight: 3,
+        opacity: 0.95,
+        dashArray: "7 5",
+        interactive: false,
+      })
+      .addTo(group as never);
+    const mid = latlngs[Math.floor(latlngs.length / 2)];
+    leaflet
+      .circleMarker(mid, {
+        radius: 4,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: BIKE_LANE_COLOR,
+        fillOpacity: 0.95,
+        interactive: false,
+      })
+      .addTo(group as never);
+  }
+}
+
 export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const leafletRef = useRef<LeafletNs | null>(null);
+  const laneGroupRef = useRef<LaneGroup | null>(null);
+  const [mapEpoch, setMapEpoch] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [lanesOn, setLanesOn] = useState(true);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -33,9 +85,7 @@ export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
       void (async () => {
         try {
           const loaded = await Promise.all([import("leaflet"), import("leaflet/dist/leaflet.css")]);
-          const mod = loaded[0] as typeof import("leaflet") & {
-            default?: typeof import("leaflet");
-          };
+          const mod = loaded[0] as LeafletNs & { default?: LeafletNs };
           const leaflet = typeof mod.map === "function" ? mod : (mod.default ?? mod);
           if (cancelled || !hostRef.current || typeof leaflet.map !== "function") return;
 
@@ -64,6 +114,10 @@ export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             })
             .addTo(created);
+
+          const laneGroup = leaflet.layerGroup().addTo(created);
+          leafletRef.current = leaflet;
+          laneGroupRef.current = laneGroup;
 
           if (place.showMarker) {
             const icon = leaflet.divIcon({
@@ -96,6 +150,7 @@ export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
               .addTo(created);
           }
 
+          setMapEpoch((n) => n + 1);
           frame = window.requestAnimationFrame(() => {
             if (!cancelled) created.invalidateSize();
           });
@@ -126,16 +181,61 @@ export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
       cancelled = true;
       observer?.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
+      leafletRef.current = null;
+      laneGroupRef.current = null;
       map?.remove();
       map = null;
     };
   }, [place.latitude, place.longitude, place.zoom, place.showMarker, markerLabel]);
 
+  useEffect(() => {
+    const leaflet = leafletRef.current;
+    const group = laneGroupRef.current;
+    if (!leaflet || !group || mapEpoch === 0) return;
+    group.clearLayers();
+    if (!lanesOn) return;
+
+    const west = place.longitude - 0.05;
+    const east = place.longitude + 0.05;
+    const south = place.latitude - 0.04;
+    const north = place.latitude + 0.04;
+    const controller = new AbortController();
+
+    void (async () => {
+      let bundled: BikeLane[] = [];
+      try {
+        const all = await loadBundledBikeLanes(controller.signal);
+        bundled = lanesInBounds(all, west, south, east, north);
+        if (!controller.signal.aborted && laneGroupRef.current) {
+          paintLanes(leaflet, laneGroupRef.current, bundled);
+        }
+      } catch {
+        /* A live Overpass answer can still draw the neighborhood. */
+      }
+      try {
+        const live = await queryBikeLanes({
+          west,
+          south,
+          east,
+          north,
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted && live.length > 0 && laneGroupRef.current) {
+          paintLanes(leaflet, laneGroupRef.current, live);
+        }
+      } catch {
+        /* Keep the bundled ways already painted. */
+      }
+    })();
+
+    return () => controller.abort();
+  }, [mapEpoch, lanesOn, place.latitude, place.longitude]);
+
   const note =
     place.scope === "country"
       ? "Country scale. A town was not filed."
       : place.approximate
-        ? "Town scale. Not a confirmed church footprint."
+        ? "Town scale. The pin is the reported place, not a surveyed crash point."
         : null;
 
   return (
@@ -153,6 +253,9 @@ export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
         </p>
         <h2 className="font-display text-xl text-fg">{heading}</h2>
         {note ? <p className="mt-1 text-sm text-muted">{note}</p> : null}
+        <div className="mt-2">
+          <BikeLaneToggle on={lanesOn} onChange={setLanesOn} />
+        </div>
       </div>
       <div className="relative mt-3 h-64 w-full sm:h-80">
         <div ref={hostRef} className="crash-locale-map h-full w-full bg-cream" />

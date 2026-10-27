@@ -15,6 +15,7 @@ import { Route as CrashesRouteImport } from './routes/crashes'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as StatesRouteImport } from './routes/states'
+import { Route as TrafficRouteImport } from './routes/traffic'
 import { Route as ApiSourceZipRouteImport } from './routes/api/source-zip'
 import { Route as CrashesIndexRouteImport } from './routes/crashes.index'
 import { Route as CrashesIdRouteImport } from './routes/crashes.$id'
@@ -50,6 +51,11 @@ const StatesRoute = StatesRouteImport.update({
   path: '/states',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrafficRoute = TrafficRouteImport.update({
+  id: '/traffic',
+  path: '/traffic',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSourceZipRoute = ApiSourceZipRouteImport.update({
   id: '/api/source-zip',
   path: '/api/source-zip',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/states': typeof StatesRoute
+  '/traffic': typeof TrafficRoute
   '/api/source-zip': typeof ApiSourceZipRoute
   '/crashes/$id': typeof CrashesIdRoute
   '/crashes/': typeof CrashesIndexRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/states': typeof StatesRoute
+  '/traffic': typeof TrafficRoute
   '/api/source-zip': typeof ApiSourceZipRoute
   '/crashes/$id': typeof CrashesIdRoute
   '/crashes': typeof CrashesIndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/states': typeof StatesRoute
+  '/traffic': typeof TrafficRoute
   '/api/source-zip': typeof ApiSourceZipRoute
   '/crashes/$id': typeof CrashesIdRoute
   '/crashes/': typeof CrashesIndexRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/login'
     | '/states'
+    | '/traffic'
     | '/api/source-zip'
     | '/crashes/$id'
     | '/crashes/'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/login'
     | '/states'
+    | '/traffic'
     | '/api/source-zip'
     | '/crashes/$id'
     | '/crashes'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/login'
     | '/states'
+    | '/traffic'
     | '/api/source-zip'
     | '/crashes/$id'
     | '/crashes/'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   DownloadRoute: typeof DownloadRoute
   LoginRoute: typeof LoginRoute
   StatesRoute: typeof StatesRoute
+  TrafficRoute: typeof TrafficRoute
   ApiSourceZipRoute: typeof ApiSourceZipRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       path: '/states'
       fullPath: '/states'
       preLoaderRoute: typeof StatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/traffic': {
+      id: '/traffic'
+      path: '/traffic'
+      fullPath: '/traffic'
+      preLoaderRoute: typeof TrafficRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/source-zip': {
@@ -251,6 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadRoute: DownloadRoute,
   LoginRoute: LoginRoute,
   StatesRoute: StatesRoute,
+  TrafficRoute: TrafficRoute,
   ApiSourceZipRoute: ApiSourceZipRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

@@ -38,12 +38,52 @@ async function insertCrash(sql: Sql, row: SeedRow): Promise<void> {
       ${row.approxLatitude ?? null}, ${row.approxLongitude ?? null},
       ${row.approxZoom ?? null}, ${row.locationPrecision ?? null}
     )
-    on conflict (id) do nothing
+    on conflict (id) do update set
+      title = excluded.title,
+      location_name = excluded.location_name,
+      occurred_on = excluded.occurred_on,
+      country = excluded.country,
+      country_code = excluded.country_code,
+      state = excluded.state,
+      state_code = excluded.state_code,
+      city = excluded.city,
+      region = excluded.region,
+      latitude = excluded.latitude,
+      longitude = excluded.longitude,
+      crash_type = excluded.crash_type,
+      outcome = excluded.outcome,
+      severity = excluded.severity,
+      fatalities = excluded.fatalities,
+      injured = excluded.injured,
+      victim_name = excluded.victim_name,
+      victim_age_band = excluded.victim_age_band,
+      driver_status = excluded.driver_status,
+      vehicle_type = excluded.vehicle_type,
+      roadway_type = excluded.roadway_type,
+      lighting = excluded.lighting,
+      helmet = excluded.helmet,
+      police_report_id = excluded.police_report_id,
+      summary = excluded.summary,
+      context = excluded.context,
+      source_name = excluded.source_name,
+      source_url = excluded.source_url,
+      verified = excluded.verified,
+      approx_latitude = excluded.approx_latitude,
+      approx_longitude = excluded.approx_longitude,
+      approx_zoom = excluded.approx_zoom,
+      location_precision = excluded.location_precision
   `;
 }
 
-async function seedIfEmpty(): Promise<void> {
+/** Drop fictional sample rows, then upsert the curated public-report seed. */
+async function ensureCuratedSeed(): Promise<void> {
   const sql = await getSql();
+  await sql`
+    delete from crashes
+    where id like 'sample-%'
+      or source_name = 'Sample seed'
+      or summary like '%[SAMPLE / DEMO]%'
+  `;
   for (const row of CRASH_SEED) {
     await insertCrash(sql, row);
   }
@@ -96,7 +136,7 @@ export type DashboardData = {
 
 export const getDashboard = createServerFn({ method: "GET" }).handler(
   async (): Promise<DashboardData> => {
-    await seedIfEmpty();
+    await ensureCuratedSeed();
     const sql = await getSql();
 
     const [totals] = await sql<{
@@ -230,7 +270,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
 export const listCrashes = createServerFn({ method: "GET" })
   .validator((input: CrashFilters) => input)
   .handler(async ({ data }): Promise<Crash[]> => {
-    await seedIfEmpty();
+    await ensureCuratedSeed();
     const sql = await getSql();
     const q = data.q?.trim().toLowerCase() ?? "";
     const region = data.region || "";
@@ -305,7 +345,7 @@ async function withMapPlace(sql: Sql, crash: Crash): Promise<CrashFile> {
 export const getCrash = createServerFn({ method: "GET" })
   .validator((id: string) => id)
   .handler(async ({ data: id }): Promise<CrashFile | null> => {
-    await seedIfEmpty();
+    await ensureCuratedSeed();
     const sql = await getSql();
     const rows = await sql<CrashRow>`
       select id, title, location_name, occurred_on, country, country_code, state, state_code,
@@ -321,7 +361,7 @@ export const getCrash = createServerFn({ method: "GET" })
   });
 
 export const listYears = createServerFn({ method: "GET" }).handler(async (): Promise<number[]> => {
-  await seedIfEmpty();
+  await ensureCuratedSeed();
   const sql = await getSql();
   const rows = await sql<{ year: number }>`
       select distinct extract(year from occurred_on)::int as year
@@ -333,7 +373,7 @@ export const listYears = createServerFn({ method: "GET" }).handler(async (): Pro
 
 export const listStates = createServerFn({ method: "GET" }).handler(
   async (): Promise<string[]> => {
-    await seedIfEmpty();
+    await ensureCuratedSeed();
     const sql = await getSql();
     const rows = await sql<{ state: string }>`
       select distinct state from crashes order by state

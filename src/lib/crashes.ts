@@ -121,10 +121,10 @@ export type CrashFilters = {
   state?: string;
 };
 
-/** Demo / sample framing for the briefing page — not real crash totals. */
-export const SAMPLE_FRAMING = {
-  source: "Sample / demo data (placeholder)",
-  note: "v1 ships with a tiny curated seed of fictional US KSI cases so the desk boots. Replace with verified filings before any public launch.",
+/** How to read the curated file — public reports, not a national census. */
+export const DESK_FRAMING = {
+  source: "Curated public reports",
+  note: "A small set of publicly reported US cyclist killed-or-seriously-injured cases, with names and news sources when they were published. Not a complete census and not an official traffic-safety total.",
 };
 
 function numOrNull(value: unknown): number | null {
