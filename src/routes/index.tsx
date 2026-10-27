@@ -4,7 +4,7 @@ import { CrashAtlas } from "@/components/crash-atlas";
 import { CrashRow } from "@/components/crash-row";
 import { YearChart, TypeChart } from "@/components/desk-charts";
 import { getDashboard } from "@/lib/crashes-server";
-import { SAMPLE_FRAMING } from "@/lib/crashes";
+import { DESK_FRAMING } from "@/lib/crashes";
 import { formatCompact } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
@@ -26,8 +26,8 @@ function Desk() {
           Cyclists killed or badly hurt by drivers
         </h1>
         <p className="max-w-2xl text-base text-muted">
-          A curated KSI desk for US cycling crashes — sample/demo filings in v1 so the
-          UI boots. Not a complete census; replace the seed before any public launch.
+          A curated KSI desk for cyclists killed or seriously injured on United States
+          roads. The file is publicly reported cases, not a complete national census.
         </p>
       </section>
 
@@ -79,10 +79,10 @@ function Desk() {
         <aside className="flex flex-col gap-4 lg:col-span-2">
           <div className="rounded-xl bg-surface p-5 shadow-[var(--shadow-border)]">
             <p className="text-[0.6875rem] uppercase tracking-[0.16em] text-subtle">
-              {SAMPLE_FRAMING.source}
+              {DESK_FRAMING.source}
             </p>
             <h2 className="mt-1 font-display text-xl text-fg">About this file</h2>
-            <p className="mt-2 text-sm text-muted">{SAMPLE_FRAMING.note}</p>
+            <p className="mt-2 text-sm text-muted">{DESK_FRAMING.note}</p>
             <dl className="mt-4 space-y-3">
               <StatLine label="Killed (outcome)" value={formatCompact(totals.killed)} />
               <StatLine

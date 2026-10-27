@@ -16,11 +16,16 @@ function States() {
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-2">
-        <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">States</p>
-        <h1 className="font-display text-3xl tracking-tight text-fg">US census regions & states</h1>
+        <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">
+          United States
+        </p>
+        <h1 className="font-display text-3xl tracking-tight text-fg">
+          Census regions and states
+        </h1>
         <p className="max-w-2xl text-muted">
-          Counts below are for this curated sample file, not official traffic totals. Open a
-          region or state to read every crash filed there.
+          The four US Census regions, and every state that appears in this curated file.
+          Counts are publicly reported cases on this desk, not NHTSA or state crash totals.
+          Open a region or state to read the filings there.
         </p>
       </header>
 
@@ -51,7 +56,7 @@ function States() {
       </div>
 
       <section>
-        <h2 className="font-display text-xl text-fg">States in the file</h2>
+        <h2 className="font-display text-xl text-fg">States with a filing</h2>
         <div className="mt-4 divide-y divide-border rounded-xl bg-surface shadow-[var(--shadow-border)]">
           {data.byState.map((s) => (
             <Link

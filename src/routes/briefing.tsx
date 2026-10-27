@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SAMPLE_FRAMING } from "@/lib/crashes";
+import { DESK_FRAMING } from "@/lib/crashes";
 
 export const Route = createFileRoute("/briefing")({
   component: Briefing,
@@ -20,8 +20,8 @@ function Briefing() {
           geography, and this briefing.
         </p>
         <p>
-          <strong className="text-fg">{SAMPLE_FRAMING.source}.</strong>{" "}
-          {SAMPLE_FRAMING.note}
+          <strong className="text-fg">{DESK_FRAMING.source}.</strong>{" "}
+          {DESK_FRAMING.note}
         </p>
       </section>
 
@@ -47,8 +47,9 @@ function Briefing() {
       <section>
         <h2 className="font-display text-2xl text-fg">Geography</h2>
         <p className="mt-3 text-muted">
-          Filings are tagged with US state and Census Bureau region (Northeast, Midwest, South,
-          West). Maps use the same place/geocode pattern as the source desk.
+          Filings are tagged with a US state and a Census Bureau region (Northeast, Midwest,
+          South, West). The overview map is the United States — the lower 48, with Alaska and
+          Hawaii inset — not a world map. A crash page opens a street map of the reported place.
         </p>
       </section>
 
