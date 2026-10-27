@@ -29,6 +29,13 @@ PLACES = [
     ("Denver", "Colorado", "CO", "HPMS_FULL_CO_2023", -105.05, 39.68, -104.90, 39.80),
     ("Minneapolis", "Minnesota", "MN", "HPMS_FULL_MN_2023", -93.32, 44.94, -93.20, 45.02),
     ("Miami", "Florida", "FL", "HPMS_FULL_FL_2023", -80.28, 25.74, -80.16, 25.84),
+    # Lancaster County, PA — several frames so the county view is not one town.
+    ("Lancaster County", "Pennsylvania", "PA", "HPMS_FULL_PA_2023", -76.40, 39.99, -76.24, 40.10),
+    ("Lancaster County", "Pennsylvania", "PA", "HPMS_FULL_PA_2023", -76.52, 40.04, -76.36, 40.16),
+    ("Lancaster County", "Pennsylvania", "PA", "HPMS_FULL_PA_2023", -76.22, 40.14, -76.06, 40.26),
+    ("Lancaster County", "Pennsylvania", "PA", "HPMS_FULL_PA_2023", -76.66, 40.08, -76.50, 40.20),
+    ("Lancaster County", "Pennsylvania", "PA", "HPMS_FULL_PA_2023", -76.24, 39.78, -76.08, 39.90),
+    ("Lancaster County", "Pennsylvania", "PA", "HPMS_FULL_PA_2023", -76.06, 39.95, -75.90, 40.07),
 ]
 
 STRATA = [
@@ -77,10 +84,11 @@ def road_name(attrs: dict) -> str:
     return route or "Unnumbered segment"
 
 
-def main() -> None:
+def main(only: str | None = None) -> None:
+    selected = [row for row in PLACES if only is None or row[0] == only]
     features = []
     seen = set()
-    for place, state, abbr, service, west, south, east, north in PLACES:
+    for place, state, abbr, service, west, south, east, north in selected:
         envelope = f"{west},{south},{east},{north}"
         got = 0
         for stratum in STRATA:
@@ -127,7 +135,7 @@ def main() -> None:
                 seen.add(key)
                 features.append(
                     {
-                        "id": f"{abbr.lower()}-{len(features)+1}",
+                        "id": f"{abbr.lower()}-{place.lower().replace(' ', '-')}-{len(features)+1}",
                         "place": place,
                         "state": state,
                         "stateAbbr": abbr,
@@ -141,8 +149,13 @@ def main() -> None:
                     }
                 )
                 got += 1
-        print(f"{place}: {got}", flush=True)
+        print(f"{place} {west},{south}: {got}", flush=True)
         time.sleep(0.4)
+
+    if only and OUT.exists():
+        previous = json.loads(OUT.read_text())
+        kept = [row for row in previous.get("features", []) if row.get("place") != only]
+        features = kept + features
 
     payload = {
         "sourceName": "FHWA Highway Performance Monitoring System, 2023 state submissions",
@@ -161,4 +174,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(sys.argv[1] if len(sys.argv) > 1 else None)

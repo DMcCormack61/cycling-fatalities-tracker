@@ -45,7 +45,8 @@ function TrafficPage() {
           </a>
           . The fields used here are <span className="text-fg">aadt</span> (annual average daily
           traffic) and <span className="text-fg">speed_limit</span> (posted miles per hour). The
-          map opens on a sample of 2023 state submissions for cities already on this desk, stored
+          map opens on a sample of 2023 state submissions for places on this desk, including
+          Lancaster County, stored
           in <span className="text-fg">public/traffic-corridors.json</span>. Zooming into a state
           asks that state’s FeatureServer for a fresh sample: up to 40 sections in each of three
           volume bands, simplified with <span className="text-fg">maxAllowableOffset</span> so the

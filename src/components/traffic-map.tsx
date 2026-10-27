@@ -82,6 +82,13 @@ function formatThreshold(value: number): string {
 
 function activePlace(view: MapView | null): string {
   if (!view || view.zoom < 6) return UNITED_STATES_VIEW.label;
+  for (const city of TRAFFIC_CITIES) {
+    if (!city.bounds) continue;
+    const [west, south, east, north] = city.bounds;
+    if (view.lng >= west && view.lng <= east && view.lat >= south && view.lat <= north) {
+      return city.label;
+    }
+  }
   let best = "";
   let bestDistance = 0.45;
   for (const city of TRAFFIC_CITIES) {
@@ -98,6 +105,10 @@ export function TrafficMap() {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<{
     setView: (center: [number, number], zoom: number, options?: { animate?: boolean }) => void;
+    fitBounds: (
+      bounds: [[number, number], [number, number]],
+      options?: { padding?: [number, number]; animate?: boolean; maxZoom?: number },
+    ) => void;
     remove: () => void;
   } | null>(null);
   const leafletRef = useRef<LeafletNs | null>(null);
@@ -307,7 +318,20 @@ export function TrafficMap() {
     const reduce =
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    mapRef.current?.setView([place.lat, place.lng], place.zoom, { animate: !reduce });
+    const map = mapRef.current;
+    if (!map) return;
+    if (place.bounds) {
+      const [west, south, east, north] = place.bounds;
+      map.fitBounds(
+        [
+          [south, west],
+          [north, east],
+        ],
+        { padding: [28, 28], animate: !reduce, maxZoom: place.zoom },
+      );
+      return;
+    }
+    map.setView([place.lat, place.lng], place.zoom, { animate: !reduce });
   }
 
   const current = activePlace(view);

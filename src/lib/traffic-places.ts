@@ -5,6 +5,8 @@ export type TrafficPlace = {
   lat: number;
   lng: number;
   zoom: number;
+  /** [west, south, east, north]. The chip fits this frame instead of a city zoom. */
+  bounds?: [number, number, number, number];
 };
 
 export const UNITED_STATES_VIEW: TrafficPlace = {
@@ -17,6 +19,14 @@ export const UNITED_STATES_VIEW: TrafficPlace = {
 export const TRAFFIC_CITIES: TrafficPlace[] = [
   { label: "Chicago", lat: 41.88479, lng: -87.63244, zoom: 15 },
   { label: "Philadelphia", lat: 39.97218, lng: -75.1936, zoom: 15 },
+  {
+    label: "Lancaster County",
+    lat: 40.01834,
+    lng: -76.29678,
+    zoom: 10,
+    // Lancaster County boundary extent, NAD83, PASDA county boundary layer.
+    bounds: [-76.72076, 39.72083, -75.87281, 40.31584],
+  },
   { label: "Cambridge", lat: 42.36202, lng: -71.07956, zoom: 15 },
   { label: "Fort Worth", lat: 32.74988, lng: -97.31191, zoom: 15 },
   { label: "Sacramento", lat: 38.59623, lng: -121.47624, zoom: 15 },
