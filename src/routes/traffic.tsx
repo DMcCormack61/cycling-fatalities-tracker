@@ -65,7 +65,12 @@ function TrafficPage() {
           host, or replace the bundled file. <span className="text-fg">scripts/fetch-hpms-corridors.py</span>{" "}
           rebuilds that file from the 2023 layers. High stays “at or above the 80th percentile of
           sections drawn”: red when volume and speed are both high, orange when one of them is,
-          green when speed is low and volume is low.
+          green when speed is low and volume is low. Dashed teal lines are dedicated bike lanes
+          from OpenStreetMap (a cycleway, bike lane, or separated track — shared-lane markings
+          are left out). They are on by default and sit apart from the red, orange, and green
+          volume colors. <span className="text-fg">scripts/fetch-bike-lanes.py</span> refreshes
+          the bundled lanes in <span className="text-fg">public/bike-lanes.json</span>; a close
+          map can also ask Overpass for the frame in view.
         </p>
       </section>
     </div>

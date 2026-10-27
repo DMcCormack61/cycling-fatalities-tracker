@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { classifySegments, type TrafficBandName } from "@/lib/traffic-bands.mjs";
+import {
+  BIKE_LANE_COLOR,
+  lanesInBounds,
+  loadBundledBikeLanes,
+  queryBikeLanes,
+  type BikeLane,
+} from "@/lib/bike-lanes";
+import { BikeLaneToggle } from "@/components/bike-lane-toggle";
 import { hpmsStateAt } from "@/lib/hpms-states";
 import {
   loadBundledCorridors,
@@ -113,6 +121,7 @@ export function TrafficMap() {
   } | null>(null);
   const leafletRef = useRef<LeafletNs | null>(null);
   const groupRef = useRef<{ clearLayers: () => void } | null>(null);
+  const laneGroupRef = useRef<{ clearLayers: () => void } | null>(null);
   const rendererRef = useRef<unknown>(null);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<MapView | null>(null);
@@ -123,6 +132,9 @@ export function TrafficMap() {
     message: "Loading saved FHWA corridors…",
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lanesOn, setLanesOn] = useState(true);
+  const [bundledLanes, setBundledLanes] = useState<BikeLane[]>([]);
+  const [liveLanes, setLiveLanes] = useState<BikeLane[]>([]);
   const liveStateRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -163,6 +175,7 @@ export function TrafficMap() {
         .addTo(map);
       const group = leaflet.layerGroup().addTo(map);
       groupRef.current = group;
+      laneGroupRef.current = leaflet.layerGroup().addTo(map);
       rendererRef.current = leaflet.canvas({ padding: 0.5 });
       const publish = () => {
         if (!cancelled) setView(readView(map));
@@ -314,6 +327,76 @@ export function TrafficMap() {
     }
   }, [classified.segments, ready, selectedId]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadBundledBikeLanes(controller.signal)
+      .then(setBundledLanes)
+      .catch(() => {
+        /* Live Overpass can still fill a close view. */
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!view || !lanesOn || view.zoom < 13) {
+      setLiveLanes([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void queryBikeLanes({ ...view, signal: controller.signal })
+        .then((lanes) => {
+          if (!controller.signal.aborted) setLiveLanes(lanes);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setLiveLanes([]);
+        });
+    }, 500);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [view, lanesOn]);
+
+  const lanesToDraw = useMemo(() => {
+    if (!lanesOn) return [];
+    if (!view) return liveLanes.length > 0 ? liveLanes : bundledLanes;
+    const live = lanesInBounds(liveLanes, view.west, view.south, view.east, view.north);
+    if (live.length > 0) return live;
+    return lanesInBounds(bundledLanes, view.west, view.south, view.east, view.north);
+  }, [lanesOn, liveLanes, bundledLanes, view]);
+
+  useEffect(() => {
+    const leaflet = leafletRef.current;
+    const group = laneGroupRef.current;
+    const renderer = rendererRef.current;
+    if (!ready || !leaflet || !group || !renderer) return;
+    group.clearLayers();
+    for (const lane of lanesToDraw) {
+      const latlngs = lane.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
+      if (latlngs.length < 2) continue;
+      leaflet
+        .polyline(latlngs, {
+          renderer: renderer as never,
+          color: "#ffffff",
+          weight: 5,
+          opacity: 0.9,
+          interactive: false,
+        })
+        .addTo(group as never);
+      leaflet
+        .polyline(latlngs, {
+          renderer: renderer as never,
+          color: BIKE_LANE_COLOR,
+          weight: 3,
+          opacity: 0.95,
+          dashArray: "7 5",
+          interactive: false,
+        })
+        .addTo(group as never);
+    }
+  }, [lanesToDraw, ready]);
+
   function go(place: TrafficPlace) {
     const reduce =
       typeof window.matchMedia === "function" &&
@@ -383,6 +466,9 @@ export function TrafficMap() {
             count={counts.green}
           />
         </ul>
+        <div className="mt-3">
+          <BikeLaneToggle on={lanesOn} onChange={setLanesOn} />
+        </div>
         <p className="mt-3 text-sm text-muted">
           {volumeCutoff != null && speedCutoff != null ? (
             <>

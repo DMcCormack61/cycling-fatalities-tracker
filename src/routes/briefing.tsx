@@ -56,7 +56,9 @@ function Briefing() {
           </Link>{" "}
           page maps FHWA annual average daily traffic and posted speed limits on federal-aid
           roads, colored against the sections in view: red when both are in the upper 20%, orange
-          when only one is, green when speed and volume are both low.
+          when only one is, green when speed and volume are both low. Every map also draws
+          dedicated bike lanes from OpenStreetMap — cycleways, bike lanes, and separated tracks,
+          not shared-lane markings — in teal, on by default.
         </p>
       </section>
 

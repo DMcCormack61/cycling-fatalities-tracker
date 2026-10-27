@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { MapPoint } from "@/lib/crashes-server";
 import {
@@ -8,6 +8,8 @@ import {
   US_INSET_FRAMES,
   US_STATE_SHAPES,
 } from "@/lib/us-atlas";
+import { BIKE_LANE_COLOR, loadBundledBikeLanes, type BikeLane } from "@/lib/bike-lanes";
+import { BikeLaneToggle } from "@/components/bike-lane-toggle";
 import { typeLabel } from "@/lib/crashes";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -28,10 +30,35 @@ export function CrashAtlas({
 }) {
   const navigate = useNavigate();
   const [hover, setHover] = useState<string | null>(null);
+  const [lanesOn, setLanesOn] = useState(true);
+  const [lanes, setLanes] = useState<BikeLane[]>([]);
   const activeId = hover ?? highlightId ?? null;
   const active = useMemo(
     () => points.find((p) => p.id === activeId) ?? null,
     [points, activeId],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadBundledBikeLanes(controller.signal)
+      .then(setLanes)
+      .catch(() => {
+        /* The atlas still shows crash pins when the lane file is missing. */
+      });
+    return () => controller.abort();
+  }, []);
+
+  const laneMarks = useMemo(
+    () =>
+      lanes.map((lane) => {
+        const pts = lane.coordinates.map(([lng, lat]) => projectUs(lat, lng));
+        const mid = pts[Math.floor(pts.length / 2)];
+        const d = pts
+          .map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+          .join("");
+        return { id: lane.id, d, mid };
+      }),
+    [lanes],
   );
 
   return (
@@ -81,6 +108,21 @@ export function CrashAtlas({
               </path>
             ))}
           </g>
+          {lanesOn
+            ? laneMarks.map((lane) => (
+                <g key={lane.id} pointerEvents="none">
+                  <path
+                    d={lane.d}
+                    fill="none"
+                    stroke={BIKE_LANE_COLOR}
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx={lane.mid.x} cy={lane.mid.y} r={2.1} fill={BIKE_LANE_COLOR} />
+                </g>
+              ))
+            : null}
           {US_INSET_FRAMES.map((frame) => (
             <text
               key={`${frame.name}-label`}
@@ -169,6 +211,7 @@ export function CrashAtlas({
         <Legend swatch="bg-high" label="Serious injury" />
         <Legend swatch="bg-moderate" label="Moderate" />
         <Legend swatch="bg-gold" label="Lower severity" />
+        <BikeLaneToggle on={lanesOn} onChange={setLanesOn} />
       </div>
     </div>
   );
