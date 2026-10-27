@@ -1,0 +1,121 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-display: "Libre Baskerville", "Iowan Old Style", Palatino, serif;
+  --font-sans: "Source Sans 3", "Source Sans Pro", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  /* Blue-dominant desk palette (distinct from Sanctuary navy/gold) */
+  --color-bg: #f0f6fc;
+  --color-surface: #ffffff;
+  --color-elevated: #e3eef9;
+  --color-fg: #0b2d4a;
+  --color-muted: #3d5a73;
+  --color-subtle: #6b8499;
+  --color-accent: #1a73c7;
+  --color-accent-fg: #ffffff;
+  --color-navy: #155eab;
+  --color-navy-deep: #0d4578;
+  --color-cream: #f0f6fc;
+  --color-gold: #38bdf8;
+  --color-border: #c5d7e8;
+  --color-ring: #1a73c7;
+  --color-critical: #b42318;
+  --color-high: #c27814;
+  --color-moderate: #1a73c7;
+  --color-low: #6b8499;
+
+  --color-background: #f0f6fc;
+  --color-foreground: #0b2d4a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0b2d4a;
+  --color-primary: #1a73c7;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #e3eef9;
+  --color-secondary-foreground: #0b2d4a;
+  --color-muted-foreground: #3d5a73;
+  --color-destructive: #b42318;
+  --color-input: #c5d7e8;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0b2d4a;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius: 12px;
+
+  --shadow-border: 0 0 0 1px rgba(21, 94, 171, 0.08), 0 1px 2px rgba(21, 94, 171, 0.05);
+  --shadow-border-hover: 0 0 0 1px rgba(21, 94, 171, 0.16), 0 2px 6px rgba(21, 94, 171, 0.08);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    font-family: var(--font-display);
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+    color: var(--color-fg);
+  }
+}
+
+.crash-locale-map.leaflet-container {
+  z-index: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--color-cream);
+  font-family: var(--font-sans);
+}
+
+.crash-locale-map .leaflet-control-attribution {
+  max-width: min(18rem, 72%);
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.crash-locale-map .crash-pin {
+  background: transparent;
+  border: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
