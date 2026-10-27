@@ -77,7 +77,7 @@ function overlaps(segment: TrafficSegment, view: MapView): boolean {
 }
 
 function formatThreshold(value: number): string {
-  return formatCompact(Math.round(value));
+  return formatCompact(Math.ceil(value));
 }
 
 function activePlace(view: MapView | null): string {
@@ -217,7 +217,7 @@ export function TrafficMap() {
             message:
               count > 0
                 ? `${formatCompact(count)} ${result.state.name} sections from FHWA HPMS (a sample of up to 40 in each volume band).`
-                : `No ${result.state.name} sections with both AADT and a posted speed came back for this frame.`,
+                : `FHWA returned no ${result.state.name} sections with both volume and a posted speed here. Saved corridors in view stay drawn.`,
           });
         })
         .catch((err: unknown) => {
@@ -237,9 +237,10 @@ export function TrafficMap() {
   }, [view]);
 
   const shown = useMemo(() => {
-    if (live) return live;
-    if (!view) return bundled;
-    return bundled.filter((segment) => overlaps(segment, view));
+    const inView = (segment: TrafficSegment) => (view ? overlaps(segment, view) : true);
+    const liveInView = live?.filter(inView) ?? [];
+    if (liveInView.length > 0) return liveInView;
+    return bundled.filter(inView);
   }, [live, bundled, view]);
 
   const classified = useMemo(() => classifySegments(shown), [shown]);
@@ -375,10 +376,10 @@ export function TrafficMap() {
         </p>
       </section>
 
-      <div className="overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-border)]">
+      <div className="h-[26rem] overflow-hidden rounded-xl bg-surface shadow-[var(--shadow-border)] sm:h-[36rem]">
         <div
           ref={hostRef}
-          className="traffic-map h-[26rem] w-full sm:h-[36rem]"
+          className="traffic-map h-full w-full"
           role="application"
           aria-label="United States street map of traffic volume and posted speed limits"
         />

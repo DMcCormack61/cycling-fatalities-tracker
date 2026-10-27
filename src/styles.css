@@ -112,8 +112,6 @@
 
 .traffic-map.leaflet-container {
   z-index: 0;
-  height: 100%;
-  width: 100%;
   background: var(--color-cream);
   font-family: var(--font-sans);
 }

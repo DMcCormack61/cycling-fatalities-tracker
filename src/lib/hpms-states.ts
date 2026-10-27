@@ -1,5 +1,7 @@
 /** State layers on the public FHWA HPMS FeatureServer (geo.dot.gov). */
 
+import { US_STATE_RINGS } from "./us-state-rings";
+
 export type HpmsState = {
   abbr: string;
   name: string;
@@ -73,8 +75,38 @@ export const HPMS_STATES: HpmsState[] = [
   { abbr: "WY", name: "Wyoming", fips: 56, bbox: [-111.06, 40.99, -104.05, 45.01], services: services("WY") },
 ];
 
-/** Smallest state box containing the point, so DC wins over Maryland. */
+const BY_ABBR = new Map(HPMS_STATES.map((state) => [state.abbr, state]));
+
+function ringContains(lng: number, lat: number, rings: number[][][]): boolean {
+  let inside = false;
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0];
+      const yi = ring[i][1];
+      const xj = ring[j][0];
+      const yj = ring[j][1];
+      if (yi === yj) continue;
+      if ((yi > lat) !== (yj > lat) && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+        inside = !inside;
+      }
+    }
+  }
+  return inside;
+}
+
+/** State outline first, then the District of Columbia box, then the smallest bbox. */
 export function hpmsStateAt(lat: number, lng: number): HpmsState | null {
+  for (const shape of US_STATE_RINGS) {
+    if (ringContains(lng, lat, shape.rings)) {
+      const state = BY_ABBR.get(shape.abbr);
+      if (state) return state;
+    }
+  }
+  const dc = BY_ABBR.get("DC");
+  if (dc) {
+    const [west, south, east, north] = dc.bbox;
+    if (lng >= west && lng <= east && lat >= south && lat <= north) return dc;
+  }
   let best: HpmsState | null = null;
   let bestArea = Infinity;
   for (const state of HPMS_STATES) {
