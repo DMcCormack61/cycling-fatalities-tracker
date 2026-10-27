@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { DESK_FRAMING } from "@/lib/crashes";
 
 export const Route = createFileRoute("/briefing")({
@@ -50,6 +50,13 @@ function Briefing() {
           Filings are tagged with a US state and a Census Bureau region (Northeast, Midwest,
           South, West). The overview map is the United States — the lower 48, with Alaska and
           Hawaii inset — not a world map. A crash page opens a street map of the reported place.
+          The{" "}
+          <Link to="/traffic" className="text-accent underline-offset-4 hover:underline">
+            Traffic
+          </Link>{" "}
+          page maps FHWA annual average daily traffic and posted speed limits on federal-aid
+          roads, colored against the sections in view: red when both are in the upper 20%, orange
+          when only one is, green when speed and volume are both low.
         </p>
       </section>
 

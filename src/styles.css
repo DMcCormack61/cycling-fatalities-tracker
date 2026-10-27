@@ -110,6 +110,22 @@
   border: none;
 }
 
+.traffic-map.leaflet-container {
+  z-index: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--color-cream);
+  font-family: var(--font-sans);
+}
+
+.traffic-map .leaflet-control-attribution {
+  max-width: min(20rem, 70%);
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

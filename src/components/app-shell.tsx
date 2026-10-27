@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, List, MapPinned, Menu, X } from "lucide-react";
+import { BookOpen, Gauge, LayoutDashboard, List, MapPinned, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const NAV = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
   { to: "/crashes", label: "Crashes", icon: List },
   { to: "/states", label: "States", icon: MapPinned },
+  { to: "/traffic", label: "Traffic", icon: Gauge },
   { to: "/briefing", label: "Briefing", icon: BookOpen },
 ] as const;
 
@@ -95,11 +96,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>Cycling Fatalities Tracker · US KSI desk · Sample data in v1</p>
-          <p>
-            <a href="/briefing" className="text-subtle underline-offset-4 hover:text-fg hover:underline">
+          <p>Cycling Fatalities Tracker · US KSI desk · Curated public reports</p>
+          <p className="flex flex-wrap gap-x-3 gap-y-1">
+            <Link to="/traffic" className="text-subtle underline-offset-4 hover:text-fg hover:underline">
+              Traffic volume
+            </Link>
+            <Link to="/briefing" className="text-subtle underline-offset-4 hover:text-fg hover:underline">
               How to read this desk
-            </a>
+            </Link>
           </p>
         </div>
       </footer>

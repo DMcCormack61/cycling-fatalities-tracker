@@ -27,7 +27,11 @@ function Desk() {
         </h1>
         <p className="max-w-2xl text-base text-muted">
           A curated KSI desk for cyclists killed or seriously injured on United States
-          roads. The file is publicly reported cases, not a complete national census.
+          roads. The file is publicly reported cases, not a complete national census.{" "}
+          <Link to="/traffic" className="text-accent underline-offset-4 hover:underline">
+            Traffic volume
+          </Link>{" "}
+          shows how busy nearby roads are, and how fast they are posted.
         </p>
       </section>
 
