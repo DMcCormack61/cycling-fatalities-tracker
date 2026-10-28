@@ -9,7 +9,7 @@ export const Route = createFileRoute("/traffic")({
       {
         name: "description",
         content:
-          "Explore FHWA traffic volume and posted speed limits on US roads, colored by the upper 20% of the sections in view.",
+          "Explore traffic volume and posted speed limits on US roads. Lancaster County uses PennDOT volumes, with shoulder width when published.",
       },
     ],
   }),
@@ -35,7 +35,7 @@ function TrafficPage() {
       <section className="max-w-2xl space-y-3 text-sm leading-relaxed text-muted">
         <h2 className="font-display text-2xl text-fg">Where the numbers come from</h2>
         <p>
-          Sections are from the Federal Highway Administration Highway Performance Monitoring
+          Most places use the Federal Highway Administration Highway Performance Monitoring
           System, published as state layers on{" "}
           <a
             className="text-accent underline-offset-4 hover:underline"
@@ -43,28 +43,65 @@ function TrafficPage() {
           >
             geo.dot.gov
           </a>
-          . The fields used here are <span className="text-fg">aadt</span> (annual average daily
-          traffic) and <span className="text-fg">speed_limit</span> (posted miles per hour). The
-          map opens on a sample of 2023 state submissions for places on this desk, including
-          Lancaster County, stored
-          in <span className="text-fg">public/traffic-corridors.json</span>. Zooming into a state
+          . Those fields are <span className="text-fg">aadt</span> (annual average daily traffic)
+          and <span className="text-fg">speed_limit</span> (posted miles per hour). The map opens
+          on a sample of 2023 state submissions for places on this desk, stored in{" "}
+          <span className="text-fg">public/traffic-corridors.json</span>. Zooming into a state
           asks that state’s FeatureServer for a fresh sample: up to 40 sections in each of three
           volume bands, simplified with <span className="text-fg">maxAllowableOffset</span> so the
-          public service can answer.
+          public service can answer.{" "}
+          <span className="text-fg">scripts/fetch-hpms-corridors.py</span> rebuilds those places.
+        </p>
+        <p>
+          Lancaster County, Pennsylvania replaces that HPMS sample with PennDOT open data so
+          municipal streets appear along with state routes. State routes come from RMS roadway
+          segments (<span className="text-fg">CUR_AADT</span> and the street name) on{" "}
+          <a
+            className="text-accent underline-offset-4 hover:underline"
+            href="https://gis.penndot.gov/gis/rest/services/opendata/roadwaysegments/MapServer"
+          >
+            roadway segments
+          </a>
+          , joined to{" "}
+          <a
+            className="text-accent underline-offset-4 hover:underline"
+            href="https://gis.penndot.gov/gis/rest/services/opendata/roadwayadmin/MapServer"
+          >
+            roadway administration
+          </a>{" "}
+          for the posted speed and to{" "}
+          <a
+            className="text-accent underline-offset-4 hover:underline"
+            href="https://gis.penndot.gov/gis/rest/services/opendata/roadwayshoulder/MapServer"
+          >
+            roadway shoulder
+          </a>{" "}
+          for total shoulder width in feet. Local roads come from the{" "}
+          <a
+            className="text-accent underline-offset-4 hover:underline"
+            href="https://gis.penndot.gov/gis/rest/services/opendata/pennsylvanialocalroads/MapServer"
+          >
+            Pennsylvania local-road inventory
+          </a>{" "}
+          (estimated average daily traffic and the municipal street name). County code 36.
+          PennDOT rarely publishes a speed or a shoulder on those local records. The popup says
+          “Not published” for speed and leaves the shoulder row out. A road with no posted speed
+          is colored from volume alone: orange when volume is in the upper 20% of the view, green
+          when it is not. It is not drawn red. Records that publish a volume but no line are left
+          off the map. <span className="text-fg">scripts/fetch-penndot-lancaster.py</span> refreshes
+          the county and leaves the other places in the bundled file.
         </p>
         <p>
           HPMS covers federal-aid roads — interstates, arterials, and many collectors — not every
           residential block. A quiet side street can be missing even when the arterial next to it
-          is drawn. Colors compare only the sections in the current frame. A road that is green
-          in a fast city can be orange where the surrounding sections are slower.
+          is drawn. Inside Lancaster County the map keeps the PennDOT lines instead of swapping in
+          that sparser live sample. Colors compare only the sections in the current frame. A road
+          that is green in a fast city can be orange where the surrounding sections are slower.
         </p>
         <p>
-          A later HPMS year, or a state DOT extract with the same two fields, plugs in without
-          changing the color rules. Point the map at{" "}
-          <span className="text-fg">HPMS_FULL_&#123;ST&#125;_&#123;YEAR&#125;</span> on the same
-          host, or replace the bundled file. <span className="text-fg">scripts/fetch-hpms-corridors.py</span>{" "}
-          rebuilds that file from the 2023 layers. High stays “at or above the 80th percentile of
-          sections drawn”: red when volume and speed are both high, orange when one of them is,
+          Click a colored line to open the road name, vehicles per day, posted speed limit, and
+          shoulder width when the source published one. High stays “at or above the 80th percentile
+          of sections drawn”: red when volume and speed are both high, orange when one of them is,
           green when speed is low and volume is low. Dashed teal lines are dedicated bike lanes
           from OpenStreetMap (a cycleway, bike lane, or separated track — shared-lane markings
           are left out). They are on by default and sit apart from the red, orange, and green

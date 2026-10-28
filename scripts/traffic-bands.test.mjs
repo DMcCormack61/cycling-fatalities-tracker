@@ -30,6 +30,20 @@ test("red is both upper-20%, orange is exactly one, green is both below", () => 
   assert.equal(trafficBand(10, 10, 10, 10), "red");
 });
 
+test("a missing posted speed is not treated as a high speed", () => {
+  const rows = [];
+  for (let i = 0; i < 7; i += 1) rows.push({ id: `slow-${i}`, aadt: 1000, speedMph: 25 });
+  rows.push({ id: "fast-quiet", aadt: 1000, speedMph: 70 });
+  rows.push({ id: "busy-unknown", aadt: 20000, speedMph: null });
+  rows.push({ id: "busy-fast", aadt: 20000, speedMph: 70 });
+  const { segments } = classifySegments(rows);
+  const byId = Object.fromEntries(segments.map((s) => [s.id, s.band]));
+  assert.equal(byId["busy-unknown"], "orange");
+  assert.equal(byId["busy-fast"], "red");
+  assert.equal(byId["fast-quiet"], "orange");
+  assert.equal(byId["slow-0"], "green");
+});
+
 test("empty input has no cutoff", () => {
   const result = classifySegments([]);
   assert.equal(result.volumeCutoff, null);

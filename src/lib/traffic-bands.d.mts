@@ -4,12 +4,12 @@ export function upperFifthCutoff(values: Array<number | null | undefined>): numb
 
 export function trafficBand(
   aadt: number,
-  speedMph: number,
+  speedMph: number | null,
   volumeCutoff: number,
   speedCutoff: number,
 ): TrafficBandName;
 
-export function classifySegments<T extends { aadt: number; speedMph: number }>(
+export function classifySegments<T extends { aadt: number; speedMph: number | null }>(
   segments: T[],
 ): {
   volumeCutoff: number | null;

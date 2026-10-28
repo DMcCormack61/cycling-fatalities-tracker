@@ -88,6 +88,46 @@ function formatThreshold(value: number): string {
   return formatCompact(Math.ceil(value));
 }
 
+const LANCASTER = TRAFFIC_CITIES.find((city) => city.label === "Lancaster County");
+
+function viewInLancaster(view: MapView | null): boolean {
+  if (!view || !LANCASTER?.bounds || view.zoom < 8) return false;
+  const [west, south, east, north] = LANCASTER.bounds;
+  return view.lng >= west && view.lng <= east && view.lat >= south && view.lat <= north;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function postedSpeed(speedMph: number | null): string {
+  if (speedMph == null || !Number.isFinite(speedMph)) return "Not published";
+  return `${formatCompact(speedMph)} mph`;
+}
+
+function shoulderText(shoulderFt: number | null | undefined): string | null {
+  if (shoulderFt == null || !Number.isFinite(shoulderFt)) return null;
+  return `${formatCompact(shoulderFt)} ft`;
+}
+
+function roadPopupHtml(segment: TrafficSegment): string {
+  const shoulder = shoulderText(segment.shoulderFt);
+  return `<p class="font-display text-base leading-snug text-fg">${escapeHtml(segment.name)}</p>
+<dl class="mt-2 space-y-1 text-sm text-fg">
+  <div><dt class="text-[0.6875rem] uppercase tracking-[0.12em] text-subtle">Traffic volume</dt><dd class="tabular-nums">${formatCompact(segment.aadt)} vehicles per day</dd></div>
+  <div><dt class="text-[0.6875rem] uppercase tracking-[0.12em] text-subtle">Posted speed limit</dt><dd class="tabular-nums">${escapeHtml(postedSpeed(segment.speedMph))}</dd></div>
+  ${
+    shoulder
+      ? `<div><dt class="text-[0.6875rem] uppercase tracking-[0.12em] text-subtle">Shoulder width</dt><dd class="tabular-nums">${escapeHtml(shoulder)}</dd></div>`
+      : ""
+  }
+</dl>`;
+}
+
 function activePlace(view: MapView | null): string {
   if (!view || view.zoom < 6) return UNITED_STATES_VIEW.label;
   for (const city of TRAFFIC_CITIES) {
@@ -121,6 +161,7 @@ export function TrafficMap() {
   } | null>(null);
   const leafletRef = useRef<LeafletNs | null>(null);
   const groupRef = useRef<{ clearLayers: () => void } | null>(null);
+  const highlightRef = useRef<{ clearLayers: () => void } | null>(null);
   const laneGroupRef = useRef<{ clearLayers: () => void } | null>(null);
   const rendererRef = useRef<unknown>(null);
   const [ready, setReady] = useState(false);
@@ -129,7 +170,7 @@ export function TrafficMap() {
   const [live, setLive] = useState<TrafficSegment[] | null>(null);
   const [phase, setPhase] = useState<Phase>({
     kind: "loading",
-    message: "Loading saved FHWA corridors…",
+    message: "Loading saved traffic sections…",
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lanesOn, setLanesOn] = useState(true);
@@ -170,11 +211,12 @@ export function TrafficMap() {
         .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
           attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Traffic <a href="https://geo.dot.gov/server/rest/services/Hosted/">FHWA HPMS</a>',
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://geo.dot.gov/server/rest/services/Hosted/">FHWA HPMS</a> · Lancaster <a href="https://gis.penndot.gov/gis/rest/services/opendata/roadwaysegments/MapServer">PennDOT</a>',
         })
         .addTo(map);
       const group = leaflet.layerGroup().addTo(map);
       groupRef.current = group;
+      highlightRef.current = leaflet.layerGroup().addTo(map);
       laneGroupRef.current = leaflet.layerGroup().addTo(map);
       rendererRef.current = leaflet.canvas({ padding: 0.5 });
       const publish = () => {
@@ -217,13 +259,14 @@ export function TrafficMap() {
       liveStateRef.current = null;
       setLive(null);
     }
-    if (view.zoom < TRAFFIC_LIVE_MIN_ZOOM) {
+    if (viewInLancaster(view) || view.zoom < TRAFFIC_LIVE_MIN_ZOOM) {
       liveStateRef.current = null;
       setLive(null);
       setPhase({
         kind: "saved",
-        message:
-          "Zoom in, or choose a city, to load HPMS sections for that state. Saved corridors stay drawn where they fall in view.",
+        message: viewInLancaster(view)
+          ? "Lancaster County uses PennDOT roadway volumes. Click a line for the road name, vehicles per day, posted speed, and shoulder width when PennDOT published it."
+          : "Zoom in, or choose a city, to load HPMS sections for that state. Saved corridors stay drawn where they fall in view.",
       });
       return;
     }
@@ -262,6 +305,12 @@ export function TrafficMap() {
 
   const shown = useMemo(() => {
     const inView = (segment: TrafficSegment) => (view ? overlaps(segment, view) : true);
+    if (viewInLancaster(view)) {
+      const county = bundled.filter(
+        (segment) => segment.place === "Lancaster County" && segment.service.startsWith("PennDOT") && inView(segment),
+      );
+      if (county.length > 0) return county;
+    }
     const liveInView = live?.filter(inView) ?? [];
     if (liveInView.length > 0) return liveInView;
     return bundled.filter(inView);
@@ -288,43 +337,100 @@ export function TrafficMap() {
     const renderer = rendererRef.current;
     if (!ready || !leaflet || !group || !renderer) return;
     group.clearLayers();
+    const dense = classified.segments.length > 500;
     for (const segment of classified.segments) {
       const latlngs = segment.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
       if (latlngs.length < 2) continue;
-      const chosen = segment.id === selectedId;
       const color = TRAFFIC_COLORS[segment.band];
-      const select = () => setSelectedId(segment.id);
+      const select = (event: { latlng?: { lat: number; lng: number } }) => {
+        setSelectedId(segment.id);
+        const map = mapRef.current;
+        const latlng = event.latlng ?? {
+          lat: segment.coordinates[0][1],
+          lng: segment.coordinates[0][0],
+        };
+        if (!map) return;
+        leaflet
+          .popup({ className: "traffic-road-popup", maxWidth: 280, autoPan: true })
+          .setLatLng(latlng)
+          .setContent(roadPopupHtml(segment))
+          .openOn(map as never);
+      };
       leaflet
         .polyline(latlngs, {
           renderer: renderer as never,
           color: "#ffffff",
-          weight: chosen ? 10 : 8,
+          weight: dense ? 5 : 8,
           opacity: 0.95,
           interactive: false,
         })
         .addTo(group as never);
-      leaflet
+      const line = leaflet
         .polyline(latlngs, {
           renderer: renderer as never,
           color,
-          weight: chosen ? 6 : 5,
+          weight: dense ? 3 : 5,
           opacity: 0.96,
+          interactive: !dense,
         })
-        .addTo(group as never)
-        .on("click", select);
+        .addTo(group as never);
+      if (dense) {
+        leaflet
+          .polyline(latlngs, {
+            renderer: renderer as never,
+            color,
+            weight: 12,
+            opacity: 0,
+          })
+          .addTo(group as never)
+          .on("click", select);
+      } else {
+        line.on("click", select);
+      }
       const mid = segment.coordinates[Math.floor(segment.coordinates.length / 2)];
       leaflet
         .circleMarker([mid[1], mid[0]], {
           renderer: renderer as never,
-          radius: chosen ? 8 : 6,
+          radius: dense ? 5 : 6,
           color: "#ffffff",
-          weight: 2,
+          weight: dense ? 1 : 2,
           fillColor: color,
           fillOpacity: 0.96,
         })
         .addTo(group as never)
         .on("click", select);
     }
+  }, [classified.segments, ready]);
+
+  useEffect(() => {
+    const leaflet = leafletRef.current;
+    const group = highlightRef.current as { clearLayers: () => void } | null;
+    const renderer = rendererRef.current;
+    if (!ready || !leaflet || !group || !renderer) return;
+    group.clearLayers();
+    const segment = classified.segments.find((item) => item.id === selectedId);
+    if (!segment) return;
+    const latlngs = segment.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
+    if (latlngs.length < 2) return;
+    const color = TRAFFIC_COLORS[segment.band];
+    leaflet
+      .polyline(latlngs, {
+        renderer: renderer as never,
+        color: "#ffffff",
+        weight: 10,
+        opacity: 0.95,
+        interactive: false,
+      })
+      .addTo(group as never);
+    leaflet
+      .polyline(latlngs, {
+        renderer: renderer as never,
+        color,
+        weight: 6,
+        opacity: 1,
+        interactive: false,
+      })
+      .addTo(group as never);
   }, [classified.segments, ready, selectedId]);
 
   useEffect(() => {
@@ -488,13 +594,33 @@ export function TrafficMap() {
           {volumeCutoff != null && speedCutoff != null ? (
             <>
               High means at or above the 80th percentile of the sections drawn here:{" "}
-              <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} AADT</span>{" "}
+              <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} vehicles per day</span>{" "}
               and{" "}
               <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>.
+              A section with no published speed is colored from volume alone, so it can be orange or
+              green and is not red.
+            </>
+          ) : volumeCutoff != null ? (
+            <>
+              Posted speed is missing for these sections. High volume is at or above{" "}
+              <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} vehicles per day</span>
+              . Those roads are orange when volume is high and green when it is not.
             </>
           ) : (
             "High means at or above the 80th percentile of the sections drawn here. Zoom to a city to compare roads."
           )}
+        </p>
+        <p className="mt-3 text-sm text-muted">
+          Lancaster County is drawn from PennDOT open data: RMS state routes and the Pennsylvania
+          local-road inventory, published at{" "}
+          <a
+            className="text-accent underline-offset-4 hover:underline"
+            href="https://gis.penndot.gov/gis/rest/services/opendata/roadwaysegments/MapServer"
+          >
+            gis.penndot.gov
+          </a>
+          . Other places stay on the FHWA HPMS sample. Click a road line for its name, vehicles
+          per day, posted speed limit, and shoulder width when PennDOT published one.
         </p>
         <p className="mt-1 text-sm text-subtle" role="status">
           {phase.message}
@@ -529,16 +655,29 @@ export function TrafficMap() {
                 <dd className="mt-1 font-display text-2xl tabular-nums text-fg">
                   {formatCompact(selected.aadt)}
                 </dd>
-                <dd className="text-xs text-muted">AADT, vehicles per day</dd>
+                <dd className="text-xs text-muted">Vehicles per day</dd>
               </div>
               <div>
                 <dt className="text-[0.6875rem] uppercase tracking-[0.14em] text-subtle">
-                  Speed limit
+                  Posted speed limit
                 </dt>
                 <dd className="mt-1 font-display text-2xl tabular-nums text-fg">
-                  {formatCompact(selected.speedMph)} mph
+                  {postedSpeed(selected.speedMph)}
                 </dd>
-                <dd className="text-xs text-muted">Posted speed</dd>
+                <dd className="text-xs text-muted">
+                  {selected.speedMph == null ? "Not published" : "Posted speed"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.6875rem] uppercase tracking-[0.14em] text-subtle">
+                  Shoulder width
+                </dt>
+                <dd className="mt-1 font-display text-2xl tabular-nums text-fg">
+                  {shoulderText(selected.shoulderFt) ?? "Not published"}
+                </dd>
+                <dd className="text-xs text-muted">
+                  {selected.shoulderFt == null ? "Not published" : "Published shoulder"}
+                </dd>
               </div>
               <div>
                 <dt className="text-[0.6875rem] uppercase tracking-[0.14em] text-subtle">Band</dt>
@@ -558,8 +697,8 @@ export function TrafficMap() {
           <>
             <h2 className="font-display text-xl text-fg">Volume and speed for one section</h2>
             <p className="mt-2 text-sm text-muted">
-              Select a colored section on the map, or a row below, to read its annual average
-              daily traffic and posted speed limit.
+              Click a colored road line to open its name, vehicles per day, posted speed limit,
+              and shoulder width when the record includes one. The same fields stay in this card.
             </p>
           </>
         )}
@@ -576,13 +715,24 @@ export function TrafficMap() {
           </p>
         ) : (
           <ul className="max-h-96 divide-y divide-border overflow-y-auto">
-            {rows.map((segment) => {
+            {rows.slice(0, 80).map((segment) => {
               const active = segment.id === selectedId;
               return (
                 <li key={segment.id}>
                   <button
                     type="button"
-                    onClick={() => setSelectedId(segment.id)}
+                    onClick={() => {
+                      setSelectedId(segment.id);
+                      const leaflet = leafletRef.current;
+                      const map = mapRef.current;
+                      const mid = segment.coordinates[Math.floor(segment.coordinates.length / 2)];
+                      if (!leaflet || !map || !mid) return;
+                      leaflet
+                        .popup({ className: "traffic-road-popup", maxWidth: 280, autoPan: true })
+                        .setLatLng({ lat: mid[1], lng: mid[0] })
+                        .setContent(roadPopupHtml(segment))
+                        .openOn(map as never);
+                    }}
                     className={cn(
                       "grid w-full grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-4 py-3 text-left text-sm",
                       active ? "bg-elevated" : "hover:bg-elevated",
@@ -601,13 +751,22 @@ export function TrafficMap() {
                       </span>
                     </span>
                     <span className="tabular-nums text-fg">{formatCompact(segment.aadt)}</span>
-                    <span className="tabular-nums text-muted">{segment.speedMph} mph</span>
+                    <span className="tabular-nums text-muted">
+                      {segment.speedMph == null ? "—" : `${segment.speedMph} mph`}
+                    </span>
                   </button>
                 </li>
               );
             })}
           </ul>
         )}
+        {rows.length > 80 ? (
+          <p className="px-4 py-3 text-sm text-muted">
+            The list shows the 80 highest volumes. The map draws all{" "}
+            <span className="tabular-nums">{formatCompact(rows.length)}</span> sections. Click a
+            line for its name, vehicles per day, posted speed, and shoulder width when published.
+          </p>
+        ) : null}
       </section>
     </div>
   );

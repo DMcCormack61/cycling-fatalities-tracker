@@ -7,7 +7,10 @@ export type TrafficSegment = {
   stateAbbr: string;
   name: string;
   aadt: number;
-  speedMph: number;
+  /** Null when the source did not publish a posted speed. */
+  speedMph: number | null;
+  /** Feet. Omitted or null when the source did not publish a shoulder width. */
+  shoulderFt?: number | null;
   functionalClass: string;
   routeId: string;
   service: string;

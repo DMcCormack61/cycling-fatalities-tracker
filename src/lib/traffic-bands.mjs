@@ -20,6 +20,8 @@ export function upperFifthCutoff(values) {
 
 export function trafficBand(aadt, speedMph, volumeCutoff, speedCutoff) {
   const volumeHigh = aadt >= volumeCutoff;
+  const speedKnown = Number.isFinite(speedMph);
+  if (!speedKnown) return volumeHigh ? "orange" : "green";
   const speedHigh = speedMph >= speedCutoff;
   if (volumeHigh && speedHigh) return "red";
   if (volumeHigh || speedHigh) return "orange";
@@ -29,7 +31,7 @@ export function trafficBand(aadt, speedMph, volumeCutoff, speedCutoff) {
 export function classifySegments(segments) {
   const volumeCutoff = upperFifthCutoff(segments.map((s) => s.aadt));
   const speedCutoff = upperFifthCutoff(segments.map((s) => s.speedMph));
-  if (volumeCutoff == null || speedCutoff == null) {
+  if (volumeCutoff == null) {
     return { volumeCutoff: null, speedCutoff: null, segments: [] };
   }
   return {
@@ -37,7 +39,12 @@ export function classifySegments(segments) {
     speedCutoff,
     segments: segments.map((segment) => ({
       ...segment,
-      band: trafficBand(segment.aadt, segment.speedMph, volumeCutoff, speedCutoff),
+      band:
+        speedCutoff == null
+          ? segment.aadt >= volumeCutoff
+            ? "orange"
+            : "green"
+          : trafficBand(segment.aadt, segment.speedMph, volumeCutoff, speedCutoff),
     })),
   };
 }

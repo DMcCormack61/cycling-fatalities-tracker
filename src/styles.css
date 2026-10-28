@@ -116,6 +116,14 @@
   font-family: var(--font-sans);
 }
 
+.traffic-road-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+
+.traffic-road-popup .leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+}
+
 .traffic-map .leaflet-control-attribution {
   max-width: min(20rem, 70%);
   background: rgba(255, 255, 255, 0.92);
