@@ -67,7 +67,14 @@ const identity = (v: string) => v;
 
 type Run = <T>(text: string, params: unknown[]) => Promise<T[]>;
 
-/** Bulk FARS / PennDOT / news rows. Idempotent; skipped when the file hash matches. */
+/**
+ * Bulk FARS / PennDOT / news rows for the local PGLite database.
+ *
+ * Neon loads happen in `scripts/migrate.mjs` during `npm run build`, where the
+ * repo checkout still has `scripts/` and `data/crash-imports/`. The Vercel
+ * function bundle does not include that script (`/var/task/scripts/...`), so
+ * this must not run on the Neon path or every crash page 500s.
+ */
 async function loadCrashImportFile(
   query: (text: string, params?: unknown[]) => Promise<unknown[]>,
 ): Promise<void> {
@@ -75,12 +82,25 @@ async function loadCrashImportFile(
   const { pathToFileURL } = await import("node:url");
   const root = process.cwd();
   const href = pathToFileURL(join(root, "scripts", "load-crash-imports.mjs")).href;
-  const mod = (await import(/* @vite-ignore */ href)) as {
+  let mod: {
     loadCrashImports: (
       query: (text: string, params?: unknown[]) => Promise<unknown[]>,
       options: { root: string },
     ) => Promise<{ skipped?: boolean }>;
   };
+  try {
+    mod = (await import(/* @vite-ignore */ href)) as typeof mod;
+  } catch (err) {
+    const code = (err as { code?: string } | null)?.code;
+    const message = err instanceof Error ? err.message : String(err);
+    if (code === "ERR_MODULE_NOT_FOUND" || message.includes("Cannot find module")) {
+      console.error(
+        "[db] crash import script is not in this runtime; PGLite will keep the curated seed only.",
+      );
+      return;
+    }
+    throw err;
+  }
   const result = await mod.loadCrashImports(query, { root });
   if (!result.skipped) console.log("[db] crash imports", result);
 }
@@ -110,15 +130,8 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
     const pool = new Pool({ connectionString: databaseUrl });
-    const client = await pool.connect();
-    try {
-      await loadCrashImportFile(async (text, params = []) => {
-        const res = await client.query(text, params);
-        return res.rows;
-      });
-    } finally {
-      client.release();
-    }
+    // Do not load data/crash-imports here. That script is not in the Vercel
+    // function filesystem, and the rows were already upserted by db:migrate.
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];

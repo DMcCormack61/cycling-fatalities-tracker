@@ -23,7 +23,7 @@ npm run dev          # http://localhost:8080
 
 The desk ships with three official layers plus a news queue. Curated named reports stay in `src/lib/crashes-seed.ts` (and `migrations/0004_real_crash_seed.sql` / `0005_lancaster_county_crash.sql`). When a curated filing is the same crash as a bulk row, the named report is kept.
 
-`data/crash-imports/` holds the bulk files. `npm run build` runs `db:migrate`, which applies SQL and then loads these files when `DATABASE_URL` is set. With no database URL, PGLite loads them at startup. A content hash skips a second load.
+`data/crash-imports/` holds the bulk files. `npm run build` runs `db:migrate`, which applies SQL and then loads these files when `DATABASE_URL` is set. That build step is the Neon load. The deployed server does not import `scripts/load-crash-imports.mjs`; that file is not in the Vercel function bundle, and calling it from a crash page 500s. With no database URL, PGLite loads the files at startup from the repo checkout. A content hash skips a second load.
 
 | Source | What is imported | Rows in this snapshot | In the totals |
 | --- | --- | --- | --- |
