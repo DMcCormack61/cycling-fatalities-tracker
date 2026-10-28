@@ -606,7 +606,7 @@ export function TrafficMap() {
             title="Red · high / high"
             body={
               lancasterColors
-                ? "Volume and speed are both in the upper 20%, unless the shoulder is wider than 4 ft and the posted speed is under 45 mph."
+                ? "Limited-access highways are red. Other roads are red when volume and speed are both in the upper 20%, unless the shoulder is wider than 4 ft and the posted speed is under 45 mph."
                 : "Volume and speed are both in the upper 20%."
             }
             count={counts.red}
@@ -648,8 +648,9 @@ export function TrafficMap() {
                   and <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>)
                 </>
               ) : null}
-              . A shoulder wider than 4 ft with a posted speed under 45 mph is never red, even when
-              both are in that upper 20%. Amber is the minimum when the published shoulder is under
+              . PennDOT access control 1 (Limited access) is red even when the shoulder is wide and
+              the posted speed is under 45 mph. That amber cap applies only to roads that are not
+              limited access. Amber is the minimum when the published shoulder is under
               2 ft, posted speed is over 40 mph, or volume is over 1,000 vehicles per day. Volume
               under 400 vehicles per day is
               green only when those amber rules do not apply and the section is not red. A section
@@ -663,7 +664,7 @@ export function TrafficMap() {
               and{" "}
               <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>.
               A section with no published speed is colored from volume alone, so it can be orange or
-              green and is not red.
+              green and is not red. Interstates and freeways are red.
             </>
           ) : volumeCutoff != null ? (
             <>
@@ -713,6 +714,7 @@ export function TrafficMap() {
             <p className="text-sm text-muted">
               {selected.place === "This view" ? selected.state : `${selected.place}, ${selected.state}`}
               {selected.functionalClass ? ` · ${selected.functionalClass}` : ""}
+              {selected.accessControl === "1" ? " · Limited access" : ""}
             </p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-3">
               <div>

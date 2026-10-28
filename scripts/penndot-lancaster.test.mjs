@@ -16,6 +16,17 @@ test("Lancaster County traffic is PennDOT and denser than the HPMS sample", () =
   assert.match(catalog.note, /Lancaster County/);
   assert.match(catalog.sourceUrl, /gis\.penndot\.gov/);
 
+  const limited = rms.filter((row) => row.accessControl === "1");
+  assert.ok(limited.length > 100, "PennDOT ACCESS_CTRL 1 marks limited-access state routes");
+  const regionLimited = catalog.features.filter(
+    (row) => row.service === "PennDOT RMS" && row.accessControl === "1",
+  );
+  assert.ok(
+    regionLimited.some((row) => row.shoulderFt > 4 && row.speedMph < 45),
+    "some limited-access segments would have hit the wide-shoulder cap",
+  );
+  assert.match(catalog.note, /ACCESS_CTRL 1/);
+
   const withShoulder = rms.find(
     (row) => Number.isFinite(row.speedMph) && row.speedMph > 0 && Number.isFinite(row.shoulderFt),
   );

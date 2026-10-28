@@ -18,6 +18,17 @@ export const LANCASTER_WIDE_SHOULDER_SPEED_MPH: number;
 
 export function usesLancasterColors(segment: { service?: string } | null | undefined): boolean;
 
+export function isLimitedAccess(
+  segment:
+    | {
+        service?: string;
+        accessControl?: string | null;
+        functionalClass?: string | null;
+      }
+    | null
+    | undefined,
+): boolean;
+
 export function lancasterAmberTrigger(
   aadt: number,
   speedMph: number | null,

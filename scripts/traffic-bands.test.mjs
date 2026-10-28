@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   classifySegments,
+  isLimitedAccess,
   lancasterBand,
   trafficBand,
   upperFifthCutoff,
@@ -109,6 +110,68 @@ test("Lancaster PennDOT: red wins, then amber, then volume under 400 is green", 
   ]);
   const hpmsById = Object.fromEntries(hpms.segments.map((s) => [s.id, s.band]));
   assert.equal(hpmsById["hpms-narrow"], "green");
+});
+
+test("limited access is red and beats the wide-shoulder cap", () => {
+  assert.equal(isLimitedAccess({ accessControl: "1", service: "PennDOT RMS", functionalClass: "Principal arterial" }), true);
+  assert.equal(isLimitedAccess({ accessControl: "2", service: "PennDOT RMS", functionalClass: "Freeway or expressway" }), false);
+  assert.equal(isLimitedAccess({ accessControl: "3", service: "PennDOT RMS", functionalClass: "Interstate" }), false);
+  assert.equal(isLimitedAccess({ service: "PennDOT local roads", functionalClass: "Interstate" }), false);
+  assert.equal(isLimitedAccess({ service: "HPMS_FULL_PA_2023", functionalClass: "Interstate" }), true);
+  assert.equal(isLimitedAccess({ service: "HPMS_FULL_PA_2023", functionalClass: "Freeway or expressway" }), true);
+  assert.equal(isLimitedAccess({ service: "HPMS_FULL_PA_2023", functionalClass: "Principal arterial" }), false);
+
+  const rows = [];
+  for (let i = 0; i < 6; i += 1) {
+    rows.push({
+      id: `arterial-${i}`,
+      aadt: 1000,
+      speedMph: 35,
+      shoulderFt: 2,
+      service: "HPMS_FULL_PA_2023",
+      functionalClass: "Principal arterial",
+    });
+  }
+  rows.push({
+    id: "turnpike",
+    aadt: 80,
+    speedMph: 25,
+    shoulderFt: 10,
+    accessControl: "1",
+    service: "PennDOT RMS",
+    functionalClass: "Principal arterial",
+  });
+  rows.push({
+    id: "hpms-freeway",
+    aadt: 80,
+    speedMph: 25,
+    shoulderFt: null,
+    service: "HPMS_FULL_IL_2023",
+    functionalClass: "Freeway or expressway",
+  });
+  rows.push({
+    id: "partial",
+    aadt: 20000,
+    speedMph: 40,
+    shoulderFt: 8,
+    accessControl: "2",
+    service: "PennDOT RMS",
+    functionalClass: "Freeway or expressway",
+  });
+  rows.push({
+    id: "busy",
+    aadt: 20000,
+    speedMph: 70,
+    shoulderFt: 2,
+    service: "HPMS_FULL_PA_2023",
+    functionalClass: "Principal arterial",
+  });
+  const { segments } = classifySegments(rows);
+  const byId = Object.fromEntries(segments.map((segment) => [segment.id, segment.band]));
+  assert.equal(byId.turnpike, "red");
+  assert.equal(byId.partial, "orange");
+  assert.equal(byId["hpms-freeway"], "red");
+  assert.equal(byId["arterial-0"], "green");
 });
 
 test("empty input has no cutoff", () => {

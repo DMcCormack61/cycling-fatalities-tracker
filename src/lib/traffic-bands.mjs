@@ -40,6 +40,21 @@ export function usesLancasterColors(segment) {
   return typeof segment?.service === "string" && segment.service.startsWith("PennDOT");
 }
 
+/** FHWA classes that are limited-access when a road has no PennDOT access-control code. */
+const HPMS_LIMITED_ACCESS = new Set(["Interstate", "Freeway or expressway"]);
+
+/**
+ * PennDOT ACCESS_CTRL 1 is Limited access (RMSSEG). 2 is partial and 3 is none.
+ * HPMS roads have no access-control code, so interstate and freeway classes stand in.
+ */
+export function isLimitedAccess(segment) {
+  const access = segment?.accessControl;
+  if (access === "1") return true;
+  if (access === "2" || access === "3") return false;
+  if (typeof segment?.service === "string" && segment.service.startsWith("PennDOT")) return false;
+  return HPMS_LIMITED_ACCESS.has(segment?.functionalClass);
+}
+
 export function lancasterAmberTrigger(aadt, speedMph, shoulderFt) {
   const narrowShoulder = Number.isFinite(shoulderFt) && shoulderFt < LANCASTER_SHOULDER_AMBER_FT;
   const fast = Number.isFinite(speedMph) && speedMph > LANCASTER_SPEED_AMBER_MPH;
@@ -90,9 +105,11 @@ export function classifySegments(segments) {
     speedCutoff,
     segments: segments.map((segment) => ({
       ...segment,
-      band: usesLancasterColors(segment)
-        ? lancasterBand(segment.aadt, segment.speedMph, segment.shoulderFt, volumeCutoff, speedCutoff)
-        : relativeBand(segment.aadt, segment.speedMph, volumeCutoff, speedCutoff),
+      band: isLimitedAccess(segment)
+        ? "red"
+        : usesLancasterColors(segment)
+          ? lancasterBand(segment.aadt, segment.speedMph, segment.shoulderFt, volumeCutoff, speedCutoff)
+          : relativeBand(segment.aadt, segment.speedMph, volumeCutoff, speedCutoff),
     })),
   };
 }

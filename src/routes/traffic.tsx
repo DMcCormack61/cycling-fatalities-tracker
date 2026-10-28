@@ -90,7 +90,9 @@ function TrafficPage() {
           publishes a speed or a shoulder on those local records. The popup says
           “Not published” for speed and leaves the shoulder row out. On this layer, red is both
           volume and speed in the upper 20% of the sections drawn, except a shoulder wider than 4 ft
-          with a posted speed under 45 mph stays amber instead of red. A section is at least amber
+          with a posted speed under 45 mph stays amber instead of red. PennDOT access control 1,
+          Limited access, is red anyway, as are FHWA interstate and freeway classes where that
+          access-control code is not published. A section is at least amber
           when the published shoulder is under 2 ft (including 0 ft), posted speed is over 40 mph,
           or volume is over 1,000 vehicles per day. Volume under 400 vehicles per day is green only
           when it is not forced amber or red. A missing speed is not red. Records that publish a

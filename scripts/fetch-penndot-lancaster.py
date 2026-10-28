@@ -227,6 +227,7 @@ def chain_same_road(features: list[dict]) -> list[dict]:
             feature.get("aadt"),
             feature.get("speedMph"),
             feature.get("shoulderFt"),
+            feature.get("accessControl"),
         )
         groups.setdefault(key, []).append(feature)
 
@@ -279,7 +280,7 @@ def county_features(code: str, name: str) -> list[dict]:
     segments = pages(
         "segments",
         f"CTY_CODE='{code}' AND CUR_AADT>0",
-        "OBJECTID,ST_RT_NO,SEG_NO,STREET_NAME,TRAF_RT_NO,TRAF_RT_NO_PREFIX,CUR_AADT",
+        "OBJECTID,ST_RT_NO,SEG_NO,STREET_NAME,TRAF_RT_NO,TRAF_RT_NO_PREFIX,CUR_AADT,ACCESS_CTRL",
         True,
     )
     print("posted speed", flush=True)
@@ -351,6 +352,9 @@ def county_features(code: str, name: str) -> list[dict]:
         shoulder = shoulder_row[2] if shoulder_row and shoulder_row[2] >= 0 else None
         func_code = (speed_row[3] if speed_row else "").strip()
         klass = ADMIN_CLASS.get(func_code, ADMIN_CLASS.get(func_code.zfill(2), "State route"))
+        access = str(attrs.get("ACCESS_CTRL") or "").strip()
+        if access not in {"1", "2", "3"}:
+            access = ""
         if speed is not None:
             speed_hits += 1
         if shoulder is not None:
@@ -366,6 +370,7 @@ def county_features(code: str, name: str) -> list[dict]:
                 "speedMph": int(round(speed)) if speed is not None else None,
                 "shoulderFt": round(shoulder, 1) if shoulder is not None else None,
                 "functionalClass": klass,
+                "accessControl": access or None,
                 "routeId": f"{route}-{attrs.get('SEG_NO') or ''}",
                 "service": "PennDOT RMS",
                 "coordinates": coords,
@@ -409,12 +414,59 @@ def main() -> None:
         "(roadway admin) and shoulder width in feet (roadway shoulder), plus the Pennsylvania "
         "local-road inventory (EST_AVERAGE_DAILY_TRAFFIC, road name, and speed or shoulder when "
         "the record includes them). Cecil and Harford counties, Maryland, also border Lancaster "
-        "and are not in this file. Geometry is simplified."
+        "and are not in this file. RMS ACCESS_CTRL 1 is limited access. Geometry is simplified."
     )
     catalog["features"] = kept + features
     OUT.write_text(json.dumps(catalog, separators=(",", ":")))
     print("wrote", len(features), "region features; bytes", OUT.stat().st_size, "kept other", len(kept))
 
 
+def stamp_access() -> None:
+    """Add ACCESS_CTRL onto RMS features already stored in the bundle."""
+    import re
+
+    chosen = counties()
+    codes = ",".join(f"'{code}'" for code, _name in chosen)
+    lookup: dict[str, str] = {}
+    print("access control", flush=True)
+    rows = pages(
+        "segments",
+        f"CTY_CODE IN ({codes}) AND CUR_AADT>0",
+        "OBJECTID,ACCESS_CTRL",
+        False,
+    )
+    for row in rows:
+        attrs = row.get("attributes") or {}
+        access = str(attrs.get("ACCESS_CTRL") or "").strip()
+        if access in {"1", "2", "3"}:
+            lookup[str(attrs.get("OBJECTID"))] = access
+    catalog = json.loads(OUT.read_text())
+    stamped = 0
+    missing = 0
+    for feature in catalog.get("features") or []:
+        if feature.get("service") != "PennDOT RMS":
+            continue
+        match = re.search(r"rms-(\d+)", str(feature.get("id") or ""))
+        if not match:
+            missing += 1
+            continue
+        access = lookup.get(match.group(1))
+        if not access:
+            missing += 1
+            continue
+        feature["accessControl"] = access
+        stamped += 1
+    note = catalog.get("note") or ""
+    if "ACCESS_CTRL 1" not in note:
+        catalog["note"] = note.rstrip() + " RMS ACCESS_CTRL 1 is limited access."
+    OUT.write_text(json.dumps(catalog, separators=(",", ":")))
+    print("stamped", stamped, "missing", missing, "lookup", len(lookup), "bytes", OUT.stat().st_size)
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if "--stamp-access" in sys.argv:
+        stamp_access()
+    else:
+        main()
