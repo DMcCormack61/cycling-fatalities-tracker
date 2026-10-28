@@ -1,23 +1,31 @@
 #!/usr/bin/env python3
-"""Replace the Lancaster County HPMS sample with PennDOT roadway volumes.
+"""Replace the Lancaster-region HPMS sample with PennDOT roadway volumes.
+
+Counties are Lancaster and the Pennsylvania counties that border it: York,
+Dauphin, Lebanon, Berks, and Chester. Codes come from src/lib/penndot-region.mjs.
+Cecil and Harford counties in Maryland are not on these PennDOT services.
 
 State routes come from PennDOT RMS roadway segments (CUR_AADT, street name),
 joined to roadway admin for posted speed and roadway shoulder for width.
 Local roads come from the Pennsylvania local-road inventory
 (EST_AVERAGE_DAILY_TRAFFIC, name, and speed or shoulder when that record has them).
 
-County code 36 is Lancaster. Other places in public/traffic-corridors.json stay.
+Other places in public/traffic-corridors.json stay.
 """
 from __future__ import annotations
 
 import json
+import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parents[1] / "public" / "traffic-corridors.json"
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "public" / "traffic-corridors.json"
+REGION_JS = ROOT / "src" / "lib" / "penndot-region.mjs"
 UA = "cycling-fatalities-tracker/penndot-lancaster"
-COUNTY = "36"
 PAGE = 1000
 
 LAYERS = {
@@ -53,10 +61,26 @@ ADMIN_CLASS = {
 }
 
 
+def counties() -> list[tuple[str, str]]:
+    text = REGION_JS.read_text()
+    found = re.findall(r'code:\s*"(\d+)",\s*name:\s*"([^"]+)"', text)
+    if len(found) < 6:
+        raise RuntimeError(f"expected PennDOT counties in {REGION_JS}")
+    return found
+
+
 def get(url: str) -> dict:
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=90) as res:
-        return json.loads(res.read().decode())
+    last: Exception | None = None
+    for attempt in range(4):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=120) as res:
+                return json.loads(res.read().decode())
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as err:
+            last = err
+            print(f"  retry {attempt + 1}: {err}", flush=True)
+            time.sleep(2 * (attempt + 1))
+    raise RuntimeError(last)
 
 
 def pages(layer: str, where: str, fields: str, geometry: bool) -> list[dict]:
@@ -197,11 +221,13 @@ def chain_same_road(features: list[dict]) -> list[dict]:
     groups: dict[tuple, list[dict]] = {}
     for feature in features:
         key = (
+            feature.get("place"),
             feature.get("service"),
             feature.get("name"),
             feature.get("aadt"),
             feature.get("speedMph"),
             feature.get("shoulderFt"),
+            feature.get("accessControl"),
         )
         groups.setdefault(key, []).append(feature)
 
@@ -241,32 +267,33 @@ def chain_same_road(features: list[dict]) -> list[dict]:
     return merged
 
 
-def main() -> None:
+def county_features(code: str, name: str) -> list[dict]:
+    print(f"=== {name} ({code})", flush=True)
     print("local roads", flush=True)
     local = pages(
         "local",
-        f"CTY_CODE='{COUNTY}' AND EST_AVERAGE_DAILY_TRAFFIC>0",
+        f"CTY_CODE='{code}' AND EST_AVERAGE_DAILY_TRAFFIC>0",
         "OBJECTID,LR_NAME,MUNICIPAL_NAME,EST_AVERAGE_DAILY_TRAFFIC,SPEED_LIMIT,SHOULDER_WIDTH,FUNCTIONAL_CLASS",
         True,
     )
     print("state segments", flush=True)
     segments = pages(
         "segments",
-        f"CTY_CODE='{COUNTY}' AND CUR_AADT>0",
-        "OBJECTID,ST_RT_NO,SEG_NO,STREET_NAME,TRAF_RT_NO,TRAF_RT_NO_PREFIX,CUR_AADT",
+        f"CTY_CODE='{code}' AND CUR_AADT>0",
+        "OBJECTID,ST_RT_NO,SEG_NO,STREET_NAME,TRAF_RT_NO,TRAF_RT_NO_PREFIX,CUR_AADT,ACCESS_CTRL",
         True,
     )
     print("posted speed", flush=True)
     admin = pages(
         "admin",
-        f"CTY_CODE='{COUNTY}' AND SPEED_LIMIT>0",
+        f"CTY_CODE='{code}' AND SPEED_LIMIT>0",
         "ST_RT_NO,SEG_BGN,SEG_END,SPEED_LIMIT,FUNC_CLS",
         False,
     )
     print("shoulders", flush=True)
     shoulders = pages(
         "shoulder",
-        f"CTY_CODE='{COUNTY}'",
+        f"CTY_CODE='{code}'",
         "ST_RT_NO,SEG_BGN,SEG_END,SHLD_TOTAL_WIDTH",
         False,
     )
@@ -296,8 +323,8 @@ def main() -> None:
             shoulder_hits += 1
         features.append(
             {
-                "id": f"pa-local-{attrs.get('OBJECTID')}",
-                "place": "Lancaster County",
+                "id": f"pa-{code}-local-{attrs.get('OBJECTID')}",
+                "place": name,
                 "state": "Pennsylvania",
                 "stateAbbr": "PA",
                 "name": local_name(attrs),
@@ -323,16 +350,19 @@ def main() -> None:
         shoulder_row = lookup(widths, route, segment)
         speed = speed_row[2] if speed_row and 0 < speed_row[2] <= 85 else None
         shoulder = shoulder_row[2] if shoulder_row and shoulder_row[2] >= 0 else None
-        code = (speed_row[3] if speed_row else "").strip()
-        klass = ADMIN_CLASS.get(code, ADMIN_CLASS.get(code.zfill(2), "State route"))
+        func_code = (speed_row[3] if speed_row else "").strip()
+        klass = ADMIN_CLASS.get(func_code, ADMIN_CLASS.get(func_code.zfill(2), "State route"))
+        access = str(attrs.get("ACCESS_CTRL") or "").strip()
+        if access not in {"1", "2", "3"}:
+            access = ""
         if speed is not None:
             speed_hits += 1
         if shoulder is not None:
             shoulder_hits += 1
         features.append(
             {
-                "id": f"pa-rms-{attrs.get('OBJECTID')}",
-                "place": "Lancaster County",
+                "id": f"pa-{code}-rms-{attrs.get('OBJECTID')}",
+                "place": name,
                 "state": "Pennsylvania",
                 "stateAbbr": "PA",
                 "name": state_name(attrs),
@@ -340,44 +370,103 @@ def main() -> None:
                 "speedMph": int(round(speed)) if speed is not None else None,
                 "shoulderFt": round(shoulder, 1) if shoulder is not None else None,
                 "functionalClass": klass,
+                "accessControl": access or None,
                 "routeId": f"{route}-{attrs.get('SEG_NO') or ''}",
                 "service": "PennDOT RMS",
                 "coordinates": coords,
             }
         )
 
+    chained = chain_same_road(features)
+    print(
+        name,
+        "chained",
+        len(chained),
+        "from",
+        len(features),
+        "pieces; speed",
+        speed_hits,
+        "shoulder",
+        shoulder_hits,
+        flush=True,
+    )
+    return chained
+
+
+def main() -> None:
+    chosen = counties()
+    names = {name for _, name in chosen}
+    features: list[dict] = []
+    for code, name in chosen:
+        features.extend(county_features(code, name))
     catalog = json.loads(OUT.read_text()) if OUT.exists() else {"features": []}
-    kept = [row for row in catalog.get("features") or [] if row.get("place") != "Lancaster County"]
-    catalog["sourceName"] = "FHWA HPMS 2023, plus PennDOT roadway volumes for Lancaster County"
-    catalog["sourceUrl"] = "https://gis.penndot.gov/gis/rest/services/opendata/roadwaytraffic/MapServer"
-    catalog["retrieved"] = "2026-10-27"
+    kept = [row for row in catalog.get("features") or [] if row.get("place") not in names]
+    listed = ", ".join(f"{name} ({code})" for code, name in chosen)
+    catalog["sourceName"] = "FHWA HPMS 2023, plus PennDOT roadway volumes for the Lancaster region"
+    catalog["sourceUrl"] = "https://gis.penndot.gov/gis/rest/services/opendata/roadwaysegments/MapServer"
+    catalog["retrieved"] = "2026-10-28"
     catalog["note"] = (
         "Most places are FHWA HPMS sections with annual average daily traffic and a posted speed. "
-        "Lancaster County, Pennsylvania replaces that sample with PennDOT open data: RMS state-route "
-        "segments (CUR_AADT) joined to posted speed (roadway admin) and shoulder width in feet "
-        "(roadway shoulder), plus the Pennsylvania local-road inventory "
-        "(EST_AVERAGE_DAILY_TRAFFIC, road name, and speed or shoulder when the record includes them). "
-        "County code 36. Geometry is simplified."
+        "The Lancaster region replaces that sample with PennDOT open data for Lancaster County and "
+        "the Pennsylvania counties that border it: "
+        + listed
+        + ". Each county uses RMS state-route segments (CUR_AADT) joined to posted speed "
+        "(roadway admin) and shoulder width in feet (roadway shoulder), plus the Pennsylvania "
+        "local-road inventory (EST_AVERAGE_DAILY_TRAFFIC, road name, and speed or shoulder when "
+        "the record includes them). Cecil and Harford counties, Maryland, also border Lancaster "
+        "and are not in this file. RMS ACCESS_CTRL 1 is limited access. Geometry is simplified."
     )
-    chained = chain_same_road(features)
-    catalog["features"] = kept + chained
+    catalog["features"] = kept + features
     OUT.write_text(json.dumps(catalog, separators=(",", ":")))
-    print(
-        "wrote",
-        len(chained),
-        "lancaster features from",
-        len(features),
-        "pieces;",
-        "with speed",
-        speed_hits,
-        "with shoulder",
-        shoulder_hits,
-        "bytes",
-        OUT.stat().st_size,
-        "kept other",
-        len(kept),
+    print("wrote", len(features), "region features; bytes", OUT.stat().st_size, "kept other", len(kept))
+
+
+def stamp_access() -> None:
+    """Add ACCESS_CTRL onto RMS features already stored in the bundle."""
+    import re
+
+    chosen = counties()
+    codes = ",".join(f"'{code}'" for code, _name in chosen)
+    lookup: dict[str, str] = {}
+    print("access control", flush=True)
+    rows = pages(
+        "segments",
+        f"CTY_CODE IN ({codes}) AND CUR_AADT>0",
+        "OBJECTID,ACCESS_CTRL",
+        False,
     )
+    for row in rows:
+        attrs = row.get("attributes") or {}
+        access = str(attrs.get("ACCESS_CTRL") or "").strip()
+        if access in {"1", "2", "3"}:
+            lookup[str(attrs.get("OBJECTID"))] = access
+    catalog = json.loads(OUT.read_text())
+    stamped = 0
+    missing = 0
+    for feature in catalog.get("features") or []:
+        if feature.get("service") != "PennDOT RMS":
+            continue
+        match = re.search(r"rms-(\d+)", str(feature.get("id") or ""))
+        if not match:
+            missing += 1
+            continue
+        access = lookup.get(match.group(1))
+        if not access:
+            missing += 1
+            continue
+        feature["accessControl"] = access
+        stamped += 1
+    note = catalog.get("note") or ""
+    if "ACCESS_CTRL 1" not in note:
+        catalog["note"] = note.rstrip() + " RMS ACCESS_CTRL 1 is limited access."
+    OUT.write_text(json.dumps(catalog, separators=(",", ":")))
+    print("stamped", stamped, "missing", missing, "lookup", len(lookup), "bytes", OUT.stat().st_size)
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if "--stamp-access" in sys.argv:
+        stamp_access()
+    else:
+        main()

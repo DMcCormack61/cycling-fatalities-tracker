@@ -9,7 +9,7 @@ export const Route = createFileRoute("/traffic")({
       {
         name: "description",
         content:
-          "Explore traffic volume and posted speed limits on US roads. Lancaster County uses PennDOT volumes, with shoulder width when published.",
+          "Explore traffic volume and posted speed limits on US roads. The Lancaster region uses PennDOT volumes for Lancaster and the Pennsylvania counties that border it.",
       },
     ],
   }),
@@ -53,8 +53,11 @@ function TrafficPage() {
           <span className="text-fg">scripts/fetch-hpms-corridors.py</span> rebuilds those places.
         </p>
         <p>
-          Lancaster County, Pennsylvania replaces that HPMS sample with PennDOT open data so
-          municipal streets appear along with state routes. State routes come from RMS roadway
+          The Lancaster region replaces that HPMS sample with PennDOT open data for Lancaster
+          County and the Pennsylvania counties that border it: York (66), Dauphin (22), Lebanon
+          (38), Berks (06), and Chester (15), along with Lancaster (36). Cecil and Harford
+          counties in Maryland also border Lancaster and are not on these PennDOT services.
+          Municipal streets appear along with state routes. State routes come from RMS roadway
           segments (<span className="text-fg">CUR_AADT</span> and the street name) on{" "}
           <a
             className="text-accent underline-offset-4 hover:underline"
@@ -83,26 +86,38 @@ function TrafficPage() {
           >
             Pennsylvania local-road inventory
           </a>{" "}
-          (estimated average daily traffic and the municipal street name). County code 36.
-          PennDOT rarely publishes a speed or a shoulder on those local records. The popup says
-          “Not published” for speed and leaves the shoulder row out. A road with no posted speed
-          is colored from volume alone: orange when volume is in the upper 20% of the view, green
-          when it is not. It is not drawn red. Records that publish a volume but no line are left
-          off the map. <span className="text-fg">scripts/fetch-penndot-lancaster.py</span> refreshes
-          the county and leaves the other places in the bundled file.
+          (estimated average daily traffic and the municipal street name). PennDOT rarely
+          publishes a speed or a shoulder on those local records. The popup says
+          “Not published” for speed and leaves the shoulder row out. On this layer, red is both
+          volume and speed in the upper 20% of the sections drawn, except a shoulder wider than 4 ft
+          with a posted speed under 45 mph stays amber instead of red, unless volume is over
+          5,000 vehicles per day. Volume over 5,000 is red. PennDOT access control 1, Limited
+          access, is red anyway, as are FHWA interstate and freeway classes where that
+          access-control code is not published. Speed over 40 mph with volume over 2,000 and under
+          5,000 and a shoulder under 4 ft is amber. A section is at least amber
+          when the published shoulder is under 2 ft (including 0 ft), posted speed is over 40 mph,
+          or volume is over 1,000 vehicles per day. Volume under 400 vehicles per day is green only
+          when it is not forced amber or red. A missing speed is not red on its own; volume over
+          5,000 or limited access still is. Records that publish a
+          volume but no line are left off the map.{" "}
+          <span className="text-fg">scripts/fetch-penndot-lancaster.py</span> refreshes these
+          counties and leaves the other places in the bundled file.
         </p>
         <p>
           HPMS covers federal-aid roads — interstates, arterials, and many collectors — not every
           residential block. A quiet side street can be missing even when the arterial next to it
-          is drawn. Inside Lancaster County the map keeps the PennDOT lines instead of swapping in
-          that sparser live sample. Colors compare only the sections in the current frame. A road
-          that is green in a fast city can be orange where the surrounding sections are slower.
+          is drawn. Inside the Lancaster region the map keeps the PennDOT lines instead of swapping
+          in that sparser live sample. Outside that region, colors compare only the sections in
+          the current frame. A road that is green in a fast city can be orange where the surrounding
+          sections are slower.
         </p>
         <p>
           Click a colored line to open the road name, vehicles per day, posted speed limit, and
-          shoulder width when the source published one. High stays “at or above the 80th percentile
-          of sections drawn”: red when volume and speed are both high, orange when one of them is,
-          green when speed is low and volume is low. Dashed teal lines are dedicated bike lanes
+          shoulder width when the source published one. The amber, red, and green rules for this
+          region apply in all six counties. Outside the Lancaster region, high stays “at or
+          above the 80th percentile of sections drawn”: red when volume and speed are both high,
+          orange when one of them is, green when speed is low and volume is low. Dashed teal lines
+          are dedicated bike lanes
           from OpenStreetMap (a cycleway, bike lane, or separated track — shared-lane markings
           are left out). They are on by default and sit apart from the red, orange, and green
           volume colors. <span className="text-fg">scripts/fetch-bike-lanes.py</span> refreshes

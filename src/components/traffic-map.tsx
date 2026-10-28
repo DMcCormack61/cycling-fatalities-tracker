@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { classifySegments, type TrafficBandName } from "@/lib/traffic-bands.mjs";
+import {
+  classifySegments,
+  usesLancasterColors,
+  type TrafficBandName,
+} from "@/lib/traffic-bands.mjs";
 import {
   BIKE_LANE_COLOR,
   lanesInBounds,
@@ -15,6 +19,7 @@ import {
   type TrafficSegment,
 } from "@/lib/hpms-query";
 import { formatCompact } from "@/lib/format";
+import { PENNDOT_COUNTIES, PENNDOT_PLACE_NAMES, PENNDOT_REGION_LABEL } from "@/lib/penndot-region.mjs";
 import {
   TRAFFIC_BAND_LABEL,
   TRAFFIC_CITIES,
@@ -48,6 +53,25 @@ const BAND_COPY: Record<TrafficBandName, string> = {
   orange: "Volume and/or speed are high, but not both in the upper 20%.",
   green: "Speed is low and volume is low — both sit below the upper 20% of this view.",
 };
+
+const LANCASTER_BAND_COPY: Record<TrafficBandName, string> = {
+  red: "Limited access, volume over 5,000 vehicles per day, or both volume and speed in the upper 20%. A shoulder wider than 4 ft with a posted speed under 45 mph stays amber unless volume is over 5,000 or the road is limited access.",
+  orange:
+    "Amber because speed is over 40 mph with volume over 2,000 and under 5,000 and a shoulder under 4 ft, or the shoulder is under 2 ft, speed is over 40, volume is over 1,000, or a wide slow shoulder kept the road from turning red.",
+  green:
+    "Volume under 400 vehicles per day is green only when shoulder, speed, and volume do not force amber or red.",
+};
+
+function bandCopy(segment: { service?: string; band: TrafficBandName }): string {
+  return usesLancasterColors(segment) ? LANCASTER_BAND_COPY[segment.band] : BAND_COPY[segment.band];
+}
+
+function bandTitle(segment: { service?: string; band: TrafficBandName }): string {
+  if (!usesLancasterColors(segment)) return TRAFFIC_BAND_LABEL[segment.band];
+  if (segment.band === "orange") return "Amber";
+  if (segment.band === "green") return "Low volume";
+  return TRAFFIC_BAND_LABEL.red;
+}
 
 function readView(map: { getBounds: () => LBounds; getCenter: () => { lat: number; lng: number }; getZoom: () => number }): MapView {
   const bounds = map.getBounds();
@@ -88,12 +112,16 @@ function formatThreshold(value: number): string {
   return formatCompact(Math.ceil(value));
 }
 
-const LANCASTER = TRAFFIC_CITIES.find((city) => city.label === "Lancaster County");
+const LANCASTER_REGION = TRAFFIC_CITIES.find((city) => city.label === PENNDOT_REGION_LABEL);
 
-function viewInLancaster(view: MapView | null): boolean {
-  if (!view || !LANCASTER?.bounds || view.zoom < 8) return false;
-  const [west, south, east, north] = LANCASTER.bounds;
+function viewInPennDotRegion(view: MapView | null): boolean {
+  if (!view || !LANCASTER_REGION?.bounds || view.zoom < 8) return false;
+  const [west, south, east, north] = LANCASTER_REGION.bounds;
   return view.lng >= west && view.lng <= east && view.lat >= south && view.lat <= north;
+}
+
+function pennDotCountyList(): string {
+  return PENNDOT_COUNTIES.map((county) => `${county.name.replace(" County", "")} (${county.code})`).join(", ");
 }
 
 function escapeHtml(value: string): string {
@@ -259,13 +287,13 @@ export function TrafficMap() {
       liveStateRef.current = null;
       setLive(null);
     }
-    if (viewInLancaster(view) || view.zoom < TRAFFIC_LIVE_MIN_ZOOM) {
+    if (viewInPennDotRegion(view) || view.zoom < TRAFFIC_LIVE_MIN_ZOOM) {
       liveStateRef.current = null;
       setLive(null);
       setPhase({
         kind: "saved",
-        message: viewInLancaster(view)
-          ? "Lancaster County uses PennDOT roadway volumes. Click a line for the road name, vehicles per day, posted speed, and shoulder width when PennDOT published it."
+        message: viewInPennDotRegion(view)
+          ? "Lancaster and its Pennsylvania neighbors use PennDOT roadway volumes. Click a line for the road name, vehicles per day, posted speed, and shoulder width when PennDOT published it."
           : "Zoom in, or choose a city, to load HPMS sections for that state. Saved corridors stay drawn where they fall in view.",
       });
       return;
@@ -305,11 +333,11 @@ export function TrafficMap() {
 
   const shown = useMemo(() => {
     const inView = (segment: TrafficSegment) => (view ? overlaps(segment, view) : true);
-    if (viewInLancaster(view)) {
-      const county = bundled.filter(
-        (segment) => segment.place === "Lancaster County" && segment.service.startsWith("PennDOT") && inView(segment),
+    if (viewInPennDotRegion(view)) {
+      const region = bundled.filter(
+        (segment) => PENNDOT_PLACE_NAMES.has(segment.place) && segment.service.startsWith("PennDOT") && inView(segment),
       );
-      if (county.length > 0) return county;
+      if (region.length > 0) return region;
     }
     const liveInView = live?.filter(inView) ?? [];
     if (liveInView.length > 0) return liveInView;
@@ -327,6 +355,7 @@ export function TrafficMap() {
     for (const segment of classified.segments) tally[segment.band] += 1;
     return tally;
   }, [classified.segments]);
+  const lancasterColors = shown.length > 0 && shown.every((segment) => usesLancasterColors(segment));
 
   useEffect(() => {
     const leaflet = leafletRef.current;
@@ -337,7 +366,9 @@ export function TrafficMap() {
     const renderer = rendererRef.current;
     if (!ready || !leaflet || !group || !renderer) return;
     group.clearLayers();
-    const dense = classified.segments.length > 500;
+    const count = classified.segments.length;
+    const dense = count > 500;
+    const packed = count > 4000;
     for (const segment of classified.segments) {
       const latlngs = segment.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
       if (latlngs.length < 2) continue;
@@ -356,25 +387,27 @@ export function TrafficMap() {
           .setContent(roadPopupHtml(segment))
           .openOn(map as never);
       };
-      leaflet
-        .polyline(latlngs, {
-          renderer: renderer as never,
-          color: "#ffffff",
-          weight: dense ? 5 : 8,
-          opacity: 0.95,
-          interactive: false,
-        })
-        .addTo(group as never);
+      if (!packed) {
+        leaflet
+          .polyline(latlngs, {
+            renderer: renderer as never,
+            color: "#ffffff",
+            weight: dense ? 5 : 8,
+            opacity: 0.95,
+            interactive: false,
+          })
+          .addTo(group as never);
+      }
       const line = leaflet
         .polyline(latlngs, {
           renderer: renderer as never,
           color,
-          weight: dense ? 3 : 5,
+          weight: packed ? 2 : dense ? 3 : 5,
           opacity: 0.96,
           interactive: !dense,
         })
         .addTo(group as never);
-      if (dense) {
+      if (dense && !packed) {
         leaflet
           .polyline(latlngs, {
             renderer: renderer as never,
@@ -384,16 +417,16 @@ export function TrafficMap() {
           })
           .addTo(group as never)
           .on("click", select);
-      } else {
+      } else if (!dense) {
         line.on("click", select);
       }
       const mid = segment.coordinates[Math.floor(segment.coordinates.length / 2)];
       leaflet
         .circleMarker([mid[1], mid[0]], {
           renderer: renderer as never,
-          radius: dense ? 5 : 6,
+          radius: packed ? 3 : dense ? 5 : 6,
           color: "#ffffff",
-          weight: dense ? 1 : 2,
+          weight: packed ? 1 : dense ? 1 : 2,
           fillColor: color,
           fillOpacity: 0.96,
         })
@@ -571,19 +604,31 @@ export function TrafficMap() {
           <LegendItem
             color={TRAFFIC_COLORS.red}
             title="Red · high / high"
-            body="Volume and speed are both in the upper 20%."
+            body={
+              lancasterColors
+                ? "Limited-access highways are red. Volume over 5,000 vehicles per day is red. Otherwise both in the upper 20%, unless the shoulder is wider than 4 ft and speed is under 45 mph."
+                : "Volume and speed are both in the upper 20%."
+            }
             count={counts.red}
           />
           <LegendItem
             color={TRAFFIC_COLORS.orange}
-            title="Orange · one high"
-            body="Volume and/or speed are high, but not both in the upper 20%."
+            title={lancasterColors ? "Amber · forced" : "Orange · one high"}
+            body={
+              lancasterColors
+                ? "Speed over 40 mph, volume over 2,000 and under 5,000, and a shoulder under 4 ft. Also shoulder under 2 ft, speed over 40, or volume over 1,000. A shoulder wider than 4 ft and speed under 45 mph stays amber, unless volume is over 5,000."
+                : "Volume and/or speed are high, but not both in the upper 20%."
+            }
             count={counts.orange}
           />
           <LegendItem
             color={TRAFFIC_COLORS.green}
-            title="Green · both low"
-            body="Speed is low and volume is low."
+            title={lancasterColors ? "Green · under 400" : "Green · both low"}
+            body={
+              lancasterColors
+                ? "Volume under 400 vehicles per day is green only when it is not forced amber or red."
+                : "Speed is low and volume is low."
+            }
             count={counts.green}
           />
         </ul>
@@ -591,14 +636,34 @@ export function TrafficMap() {
           <BikeLaneToggle on={lanesOn} onChange={setLanesOn} />
         </div>
         <p className="mt-3 text-sm text-muted">
-          {volumeCutoff != null && speedCutoff != null ? (
+          {lancasterColors ? (
+            <>
+              In this PennDOT region, red wins over amber. Limited access (PennDOT access control 1,
+              or an interstate or freeway where that code is missing) is red. Volume over 5,000
+              vehicles per day is red, including when the shoulder is wider than 4 ft and the posted
+              speed is under 45 mph. That wide-shoulder cap still keeps other roads at amber. A road
+              is also amber when speed is over 40 mph, volume is over 2,000 and under 5,000, and the
+              shoulder is under 4 ft. Amber is the minimum for a shoulder under 2 ft, speed over 40,
+              or volume over 1,000. Volume under 400 is green only when it is not forced amber or
+              red. Otherwise red is both volume and speed at or above the 80th percentile
+              {volumeCutoff != null && speedCutoff != null ? (
+                <>
+                  {" "}
+                  (
+                  <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} vehicles per day</span>{" "}
+                  and <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>)
+                </>
+              ) : null}
+              .
+            </>
+          ) : volumeCutoff != null && speedCutoff != null ? (
             <>
               High means at or above the 80th percentile of the sections drawn here:{" "}
               <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} vehicles per day</span>{" "}
               and{" "}
               <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>.
               A section with no published speed is colored from volume alone, so it can be orange or
-              green and is not red.
+              green and is not red. Interstates and freeways are red.
             </>
           ) : volumeCutoff != null ? (
             <>
@@ -611,16 +676,18 @@ export function TrafficMap() {
           )}
         </p>
         <p className="mt-3 text-sm text-muted">
-          Lancaster County is drawn from PennDOT open data: RMS state routes and the Pennsylvania
-          local-road inventory, published at{" "}
+          The Lancaster region is {pennDotCountyList()}, drawn from PennDOT RMS state routes and the
+          Pennsylvania local-road inventory at{" "}
           <a
             className="text-accent underline-offset-4 hover:underline"
             href="https://gis.penndot.gov/gis/rest/services/opendata/roadwaysegments/MapServer"
           >
             gis.penndot.gov
           </a>
-          . Other places stay on the FHWA HPMS sample. Click a road line for its name, vehicles
-          per day, posted speed limit, and shoulder width when PennDOT published one.
+          . Cecil and Harford counties in Maryland also border Lancaster and are not in this layer.
+          The same popup fields and amber, red, and green rules apply in every PennDOT county here.
+          Other places stay on the FHWA HPMS sample. Click a road line for its name, vehicles per
+          day, posted speed limit, and shoulder width when PennDOT published one.
         </p>
         <p className="mt-1 text-sm text-subtle" role="status">
           {phase.message}
@@ -646,6 +713,7 @@ export function TrafficMap() {
             <p className="text-sm text-muted">
               {selected.place === "This view" ? selected.state : `${selected.place}, ${selected.state}`}
               {selected.functionalClass ? ` · ${selected.functionalClass}` : ""}
+              {selected.accessControl === "1" ? " · Limited access" : ""}
             </p>
             <dl className="mt-4 grid gap-3 sm:grid-cols-3">
               <div>
@@ -687,9 +755,9 @@ export function TrafficMap() {
                     style={{ background: TRAFFIC_COLORS[selected.band] }}
                     aria-hidden
                   />
-                  {TRAFFIC_BAND_LABEL[selected.band]}
+                  {bandTitle(selected)}
                 </dd>
-                <dd className="text-xs text-muted">{BAND_COPY[selected.band]}</dd>
+                <dd className="text-xs text-muted">{bandCopy(selected)}</dd>
               </div>
             </dl>
           </>
@@ -746,7 +814,7 @@ export function TrafficMap() {
                     <span className="min-w-0">
                       <span className="block truncate text-fg">{segment.name}</span>
                       <span className="block truncate text-xs text-subtle">
-                        {TRAFFIC_BAND_LABEL[segment.band]}
+                        {bandTitle(segment)}
                         {segment.place !== "This view" ? ` · ${segment.place}` : ""}
                       </span>
                     </span>

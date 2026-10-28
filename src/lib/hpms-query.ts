@@ -12,6 +12,11 @@ export type TrafficSegment = {
   /** Feet. Omitted or null when the source did not publish a shoulder width. */
   shoulderFt?: number | null;
   functionalClass: string;
+  /**
+   * PennDOT RMS ACCESS_CTRL. 1 is limited access, 2 is partial, 3 is none.
+   * Absent on HPMS and on the local-road inventory.
+   */
+  accessControl?: "1" | "2" | "3" | null;
   routeId: string;
   service: string;
   coordinates: [number, number][];
