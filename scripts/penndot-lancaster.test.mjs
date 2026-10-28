@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { PENNDOT_COUNTIES } from "../src/lib/penndot-region.mjs";
 
 const catalog = JSON.parse(readFileSync(new URL("../public/traffic-corridors.json", import.meta.url)));
 
@@ -40,4 +41,19 @@ test("Lancaster County traffic is PennDOT and denser than the HPMS sample", () =
 
   const chicago = catalog.features.filter((row) => row.place === "Chicago");
   assert.equal(chicago.length, 108);
+
+  for (const county of PENNDOT_COUNTIES) {
+    const rows = catalog.features.filter((row) => row.place === county.name);
+    const countyLocal = rows.filter((row) => row.service === "PennDOT local roads");
+    const countyRms = rows.filter((row) => row.service === "PennDOT RMS");
+    assert.ok(rows.length > 400, `${county.name} should have PennDOT sections, got ${rows.length}`);
+    assert.ok(countyLocal.length > 50, `${county.name} should include local roads`);
+    assert.ok(countyRms.length > 100, `${county.name} should include state routes`);
+    assert.match(catalog.note, new RegExp(county.name.replace(" County", "")));
+  }
+
+  const regionIds = catalog.features.filter((row) =>
+    PENNDOT_COUNTIES.some((county) => county.name === row.place),
+  );
+  assert.equal(new Set(regionIds.map((row) => row.id)).size, regionIds.length);
 });

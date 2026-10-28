@@ -19,6 +19,7 @@ import {
   type TrafficSegment,
 } from "@/lib/hpms-query";
 import { formatCompact } from "@/lib/format";
+import { PENNDOT_COUNTIES, PENNDOT_PLACE_NAMES, PENNDOT_REGION_LABEL } from "@/lib/penndot-region.mjs";
 import {
   TRAFFIC_BAND_LABEL,
   TRAFFIC_CITIES,
@@ -111,12 +112,16 @@ function formatThreshold(value: number): string {
   return formatCompact(Math.ceil(value));
 }
 
-const LANCASTER = TRAFFIC_CITIES.find((city) => city.label === "Lancaster County");
+const LANCASTER_REGION = TRAFFIC_CITIES.find((city) => city.label === PENNDOT_REGION_LABEL);
 
-function viewInLancaster(view: MapView | null): boolean {
-  if (!view || !LANCASTER?.bounds || view.zoom < 8) return false;
-  const [west, south, east, north] = LANCASTER.bounds;
+function viewInPennDotRegion(view: MapView | null): boolean {
+  if (!view || !LANCASTER_REGION?.bounds || view.zoom < 8) return false;
+  const [west, south, east, north] = LANCASTER_REGION.bounds;
   return view.lng >= west && view.lng <= east && view.lat >= south && view.lat <= north;
+}
+
+function pennDotCountyList(): string {
+  return PENNDOT_COUNTIES.map((county) => `${county.name.replace(" County", "")} (${county.code})`).join(", ");
 }
 
 function escapeHtml(value: string): string {
@@ -282,13 +287,13 @@ export function TrafficMap() {
       liveStateRef.current = null;
       setLive(null);
     }
-    if (viewInLancaster(view) || view.zoom < TRAFFIC_LIVE_MIN_ZOOM) {
+    if (viewInPennDotRegion(view) || view.zoom < TRAFFIC_LIVE_MIN_ZOOM) {
       liveStateRef.current = null;
       setLive(null);
       setPhase({
         kind: "saved",
-        message: viewInLancaster(view)
-          ? "Lancaster County uses PennDOT roadway volumes. Click a line for the road name, vehicles per day, posted speed, and shoulder width when PennDOT published it."
+        message: viewInPennDotRegion(view)
+          ? "Lancaster and its Pennsylvania neighbors use PennDOT roadway volumes. Click a line for the road name, vehicles per day, posted speed, and shoulder width when PennDOT published it."
           : "Zoom in, or choose a city, to load HPMS sections for that state. Saved corridors stay drawn where they fall in view.",
       });
       return;
@@ -328,11 +333,11 @@ export function TrafficMap() {
 
   const shown = useMemo(() => {
     const inView = (segment: TrafficSegment) => (view ? overlaps(segment, view) : true);
-    if (viewInLancaster(view)) {
-      const county = bundled.filter(
-        (segment) => segment.place === "Lancaster County" && segment.service.startsWith("PennDOT") && inView(segment),
+    if (viewInPennDotRegion(view)) {
+      const region = bundled.filter(
+        (segment) => PENNDOT_PLACE_NAMES.has(segment.place) && segment.service.startsWith("PennDOT") && inView(segment),
       );
-      if (county.length > 0) return county;
+      if (region.length > 0) return region;
     }
     const liveInView = live?.filter(inView) ?? [];
     if (liveInView.length > 0) return liveInView;
@@ -361,7 +366,9 @@ export function TrafficMap() {
     const renderer = rendererRef.current;
     if (!ready || !leaflet || !group || !renderer) return;
     group.clearLayers();
-    const dense = classified.segments.length > 500;
+    const count = classified.segments.length;
+    const dense = count > 500;
+    const packed = count > 4000;
     for (const segment of classified.segments) {
       const latlngs = segment.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
       if (latlngs.length < 2) continue;
@@ -380,25 +387,27 @@ export function TrafficMap() {
           .setContent(roadPopupHtml(segment))
           .openOn(map as never);
       };
-      leaflet
-        .polyline(latlngs, {
-          renderer: renderer as never,
-          color: "#ffffff",
-          weight: dense ? 5 : 8,
-          opacity: 0.95,
-          interactive: false,
-        })
-        .addTo(group as never);
+      if (!packed) {
+        leaflet
+          .polyline(latlngs, {
+            renderer: renderer as never,
+            color: "#ffffff",
+            weight: dense ? 5 : 8,
+            opacity: 0.95,
+            interactive: false,
+          })
+          .addTo(group as never);
+      }
       const line = leaflet
         .polyline(latlngs, {
           renderer: renderer as never,
           color,
-          weight: dense ? 3 : 5,
+          weight: packed ? 2 : dense ? 3 : 5,
           opacity: 0.96,
           interactive: !dense,
         })
         .addTo(group as never);
-      if (dense) {
+      if (dense && !packed) {
         leaflet
           .polyline(latlngs, {
             renderer: renderer as never,
@@ -408,16 +417,16 @@ export function TrafficMap() {
           })
           .addTo(group as never)
           .on("click", select);
-      } else {
+      } else if (!dense) {
         line.on("click", select);
       }
       const mid = segment.coordinates[Math.floor(segment.coordinates.length / 2)];
       leaflet
         .circleMarker([mid[1], mid[0]], {
           renderer: renderer as never,
-          radius: dense ? 5 : 6,
+          radius: packed ? 3 : dense ? 5 : 6,
           color: "#ffffff",
-          weight: dense ? 1 : 2,
+          weight: packed ? 1 : dense ? 1 : 2,
           fillColor: color,
           fillOpacity: 0.96,
         })
@@ -661,16 +670,18 @@ export function TrafficMap() {
           )}
         </p>
         <p className="mt-3 text-sm text-muted">
-          Lancaster County is drawn from PennDOT open data: RMS state routes and the Pennsylvania
-          local-road inventory, published at{" "}
+          The Lancaster region is {pennDotCountyList()}, drawn from PennDOT RMS state routes and the
+          Pennsylvania local-road inventory at{" "}
           <a
             className="text-accent underline-offset-4 hover:underline"
             href="https://gis.penndot.gov/gis/rest/services/opendata/roadwaysegments/MapServer"
           >
             gis.penndot.gov
           </a>
-          . Other places stay on the FHWA HPMS sample. Click a road line for its name, vehicles
-          per day, posted speed limit, and shoulder width when PennDOT published one.
+          . Cecil and Harford counties in Maryland also border Lancaster and are not in this layer.
+          The same popup fields and amber, red, and green rules apply in every PennDOT county here.
+          Other places stay on the FHWA HPMS sample. Click a road line for its name, vehicles per
+          day, posted speed limit, and shoulder width when PennDOT published one.
         </p>
         <p className="mt-1 text-sm text-subtle" role="status">
           {phase.message}

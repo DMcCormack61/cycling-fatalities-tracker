@@ -1,3 +1,5 @@
+import { PENNDOT_REGION_BOUNDS, PENNDOT_REGION_LABEL } from "@/lib/penndot-region.mjs";
+
 /** Cities used as jump targets. Centers match the bundled HPMS sample boxes. */
 
 export type TrafficPlace = {
@@ -20,12 +22,12 @@ export const TRAFFIC_CITIES: TrafficPlace[] = [
   { label: "Chicago", lat: 41.88479, lng: -87.63244, zoom: 15 },
   { label: "Philadelphia", lat: 39.97218, lng: -75.1936, zoom: 15 },
   {
-    label: "Lancaster County",
-    lat: 40.01834,
-    lng: -76.29678,
-    zoom: 10,
-    // Lancaster County boundary extent, NAD83, PASDA county boundary layer.
-    bounds: [-76.72076, 39.72083, -75.87281, 40.31584],
+    label: PENNDOT_REGION_LABEL,
+    lat: 40.19,
+    lng: -76.24,
+    zoom: 9,
+    // Union of PennDOT extents for Lancaster and the PA counties that border it.
+    bounds: [...PENNDOT_REGION_BOUNDS] as [number, number, number, number],
   },
   { label: "Cambridge", lat: 42.36202, lng: -71.07956, zoom: 15 },
   { label: "Fort Worth", lat: 32.74988, lng: -97.31191, zoom: 15 },
