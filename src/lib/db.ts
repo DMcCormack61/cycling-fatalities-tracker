@@ -67,6 +67,24 @@ const identity = (v: string) => v;
 
 type Run = <T>(text: string, params: unknown[]) => Promise<T[]>;
 
+/** Bulk FARS / PennDOT / news rows. Idempotent; skipped when the file hash matches. */
+async function loadCrashImportFile(
+  query: (text: string, params?: unknown[]) => Promise<unknown[]>,
+): Promise<void> {
+  const { join } = await import("node:path");
+  const { pathToFileURL } = await import("node:url");
+  const root = process.cwd();
+  const href = pathToFileURL(join(root, "scripts", "load-crash-imports.mjs")).href;
+  const mod = (await import(/* @vite-ignore */ href)) as {
+    loadCrashImports: (
+      query: (text: string, params?: unknown[]) => Promise<unknown[]>,
+      options: { root: string },
+    ) => Promise<{ skipped?: boolean }>;
+  };
+  const result = await mod.loadCrashImports(query, { root });
+  if (!result.skipped) console.log("[db] crash imports", result);
+}
+
 /** Wrap a query runner in the tagged-template + `.query()` `Sql` surface. */
 function toSql(run: Run): Sql {
   const sql = (async <T = Record<string, unknown>>(
@@ -92,6 +110,15 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
     const pool = new Pool({ connectionString: databaseUrl });
+    const client = await pool.connect();
+    try {
+      await loadCrashImportFile(async (text, params = []) => {
+        const res = await client.query(text, params);
+        return res.rows;
+      });
+    } finally {
+      client.release();
+    }
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
@@ -154,6 +181,10 @@ async function createPgliteSql(): Promise<Sql> {
         await tx.query("insert into _migrations (name) values ($1)", [name]);
       });
     }
+    await loadCrashImportFile(async (text, params = []) => {
+      const result = await pg.query(text, params);
+      return result.rows;
+    });
   };
   const pass = (globalRef.__pgliteMigrateChain__ ?? Promise.resolve())
     .catch(() => undefined) // an earlier failed pass must not wedge the chain

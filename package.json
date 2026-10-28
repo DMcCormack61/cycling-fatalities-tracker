@@ -7,6 +7,10 @@
     "nf3": "0.3.17"
   },
   "scripts": {
+    "import:fars": "python3 scripts/fetch-fars-cyclists.py",
+    "import:penndot": "python3 scripts/fetch-penndot-bike.py",
+    "import:news": "node scripts/fetch-news-crashes.mjs",
+    "import:load": "node scripts/load-crash-imports.mjs",
     "dev": "vite dev --host 0.0.0.0 --port 8080",
     "build": "vite build && npm run db:migrate",
     "db:migrate": "node scripts/migrate.mjs",

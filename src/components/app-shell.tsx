@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <footer className="border-t border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>Bicycle-Automotive Collisions · Curated public reports</p>
+          <p>Bicycle-Automotive Collisions · FARS, PennDOT, and curated reports</p>
           <p className="flex flex-wrap gap-x-3 gap-y-1">
             <Link to="/traffic" className="text-subtle underline-offset-4 hover:text-fg hover:underline">
               Traffic volume

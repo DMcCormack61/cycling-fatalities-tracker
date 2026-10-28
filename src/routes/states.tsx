@@ -23,9 +23,9 @@ function States() {
           Census regions and states
         </h1>
         <p className="max-w-2xl text-muted">
-          The four US Census regions, and every state that appears in this curated file.
-          Counts are publicly reported cases on this desk, not NHTSA or state crash totals.
-          Open a region or state to read the filings there.
+          The four US Census regions, and every state in the verified file. Counts are
+          NHTSA FARS cyclist fatalities, PennDOT bicycle crashes in Pennsylvania, and the
+          curated named reports. Unreviewed news is not included.
         </p>
       </header>
 
@@ -56,7 +56,7 @@ function States() {
       </div>
 
       <section>
-        <h2 className="font-display text-xl text-fg">States with a filing</h2>
+        <h2 className="font-display text-xl text-fg">States in the verified file</h2>
         <div className="mt-4 divide-y divide-border rounded-xl bg-surface shadow-[var(--shadow-border)]">
           {data.byState.map((s) => (
             <Link

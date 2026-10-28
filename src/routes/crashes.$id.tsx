@@ -4,21 +4,44 @@ import { CrashAtlas } from "@/components/crash-atlas";
 import { CrashLocaleMap } from "@/components/crash-locale-map";
 import { SeverityBadge } from "@/components/severity-badge";
 import { Badge } from "@/components/ui/badge";
-import { getCrash, getDashboard } from "@/lib/crashes-server";
-import { driverStatusLabel, outcomeLabel, typeLabel } from "@/lib/crashes";
+import { getCrash } from "@/lib/crashes-server";
+import type { MapPoint } from "@/lib/crashes-server";
+import { driverStatusLabel, ingestLabel, outcomeLabel, typeLabel } from "@/lib/crashes";
 import { formatCompact, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/crashes/$id")({
   loader: async ({ params }) => {
-    const [crash, dash] = await Promise.all([getCrash({ data: params.id }), getDashboard()]);
+    const crash = await getCrash({ data: params.id });
     if (!crash) throw notFound();
-    return { crash, mapPoints: dash.mapPoints };
+    return { crash };
   },
   component: CrashDetail,
 });
 
 function CrashDetail() {
-  const { crash, mapPoints } = Route.useLoaderData();
+  const { crash } = Route.useLoaderData();
+  const mapPoints: MapPoint[] =
+    typeof crash.latitude === "number" && typeof crash.longitude === "number"
+      ? [
+          {
+            id: crash.id,
+            title: crash.title,
+            city: crash.city,
+            country: crash.country,
+            state: crash.state,
+            occurredOn: crash.occurredOn,
+            crashType: crash.crashType,
+            outcome: crash.outcome,
+            severity: crash.severity,
+            fatalities: crash.fatalities,
+            injured: crash.injured,
+            latitude: crash.latitude,
+            longitude: crash.longitude,
+            ingestSource: crash.ingestSource ?? null,
+            victimName: crash.victimName,
+          },
+        ]
+      : [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -37,6 +60,8 @@ function CrashDetail() {
             <Badge>{typeLabel(crash.crashType)}</Badge>
             <Badge variant="outline">{outcomeLabel(crash.outcome)}</Badge>
             {crash.verified ? <Badge variant="outline">Documented</Badge> : null}
+            {crash.reviewStatus === "pending" ? <Badge variant="outline">Needs review</Badge> : null}
+            <Badge variant="outline">{ingestLabel(crash.ingestSource)}</Badge>
           </div>
           <header>
             <p className="text-sm text-muted">
