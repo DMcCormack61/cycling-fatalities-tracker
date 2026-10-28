@@ -55,9 +55,9 @@ const BAND_COPY: Record<TrafficBandName, string> = {
 };
 
 const LANCASTER_BAND_COPY: Record<TrafficBandName, string> = {
-  red: "Volume and speed are both in the upper 20% of the sections drawn in this view.",
+  red: "Volume and speed are both in the upper 20% of the sections drawn in this view. A shoulder wider than 4 ft with a posted speed under 45 mph would have stayed amber.",
   orange:
-    "Amber because the shoulder is under 2 ft, posted speed is over 40 mph, volume is over 1,000 vehicles per day, or only one of volume and speed is in the upper 20%.",
+    "Amber because the shoulder is under 2 ft, posted speed is over 40 mph, volume is over 1,000 vehicles per day, only one of volume and speed is in the upper 20%, or a shoulder wider than 4 ft kept a slow road from turning red.",
   green:
     "Volume under 400 vehicles per day is green only when shoulder, speed, and volume do not force amber or red.",
 };
@@ -604,7 +604,11 @@ export function TrafficMap() {
           <LegendItem
             color={TRAFFIC_COLORS.red}
             title="Red · high / high"
-            body="Volume and speed are both in the upper 20%."
+            body={
+              lancasterColors
+                ? "Volume and speed are both in the upper 20%, unless the shoulder is wider than 4 ft and the posted speed is under 45 mph."
+                : "Volume and speed are both in the upper 20%."
+            }
             count={counts.red}
           />
           <LegendItem
@@ -612,7 +616,7 @@ export function TrafficMap() {
             title={lancasterColors ? "Amber · forced" : "Orange · one high"}
             body={
               lancasterColors
-                ? "Shoulder under 2 ft (including 0), posted speed over 40 mph, or volume over 1,000 vehicles per day. Red still wins when both are in the upper 20%."
+                ? "Shoulder under 2 ft (including 0), posted speed over 40 mph, or volume over 1,000 vehicles per day. A shoulder wider than 4 ft with a posted speed under 45 mph also stays amber instead of red."
                 : "Volume and/or speed are high, but not both in the upper 20%."
             }
             count={counts.orange}
@@ -634,8 +638,8 @@ export function TrafficMap() {
         <p className="mt-3 text-sm text-muted">
           {lancasterColors ? (
             <>
-              Red is unchanged: both volume and speed are at or above the 80th percentile of the
-              sections drawn here
+              Red is both volume and speed at or above the 80th percentile of the sections drawn
+              here
               {volumeCutoff != null && speedCutoff != null ? (
                 <>
                   {" "}
@@ -644,8 +648,10 @@ export function TrafficMap() {
                   and <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>)
                 </>
               ) : null}
-              . Amber is the minimum when the published shoulder is under 2 ft, posted speed is over
-              40 mph, or volume is over 1,000 vehicles per day. Volume under 400 vehicles per day is
+              . A shoulder wider than 4 ft with a posted speed under 45 mph is never red, even when
+              both are in that upper 20%. Amber is the minimum when the published shoulder is under
+              2 ft, posted speed is over 40 mph, or volume is over 1,000 vehicles per day. Volume
+              under 400 vehicles per day is
               green only when those amber rules do not apply and the section is not red. A section
               with at least 400 vehicles per day can still be amber when only volume or only speed
               is in the upper 20%.

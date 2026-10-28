@@ -13,6 +13,8 @@ export const LANCASTER_SHOULDER_AMBER_FT: number;
 export const LANCASTER_SPEED_AMBER_MPH: number;
 export const LANCASTER_VOLUME_AMBER: number;
 export const LANCASTER_VOLUME_GREEN: number;
+export const LANCASTER_WIDE_SHOULDER_FT: number;
+export const LANCASTER_WIDE_SHOULDER_SPEED_MPH: number;
 
 export function usesLancasterColors(segment: { service?: string } | null | undefined): boolean;
 
@@ -20,6 +22,11 @@ export function lancasterAmberTrigger(
   aadt: number,
   speedMph: number | null,
   shoulderFt: number | null | undefined,
+): boolean;
+
+export function lancasterShoulderCapsRed(
+  shoulderFt: number | null | undefined,
+  speedMph: number | null,
 ): boolean;
 
 export function lancasterBand(

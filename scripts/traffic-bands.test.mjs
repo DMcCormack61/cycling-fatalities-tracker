@@ -69,6 +69,15 @@ test("Lancaster PennDOT: red wins, then amber, then volume under 400 is green", 
   assert.equal(lancasterBand(300, 35, 8, 10000, 30), "green");
   assert.equal(lancasterBand(350, 70, 0, 200, 40), "red");
 
+  // A shoulder wider than 4 ft and a posted speed under 45 mph cannot be red.
+  assert.equal(lancasterBand(5000, 40, 4.1, 1000, 30), "orange");
+  assert.equal(lancasterBand(5000, 44, 6, 1000, 30), "orange");
+  assert.equal(lancasterBand(5000, 40, 4, 1000, 30), "red");
+  assert.equal(lancasterBand(5000, 45, 6, 1000, 30), "red");
+  assert.equal(lancasterBand(5000, 40, null, 1000, 30), "red");
+  assert.equal(lancasterBand(200, 30, 6, 10000, 60), "green");
+  assert.equal(lancasterBand(200, 35, 6, 100, 30), "green");
+
   // At or above 400, with no amber trigger, the upper-20% rule still colors one-high amber.
   assert.equal(lancasterBand(500, 25, 8, 400, 30), "orange");
   assert.equal(lancasterBand(500, 25, 8, 10000, 60), "green");
