@@ -90,12 +90,15 @@ function TrafficPage() {
           publishes a speed or a shoulder on those local records. The popup says
           “Not published” for speed and leaves the shoulder row out. On this layer, red is both
           volume and speed in the upper 20% of the sections drawn, except a shoulder wider than 4 ft
-          with a posted speed under 45 mph stays amber instead of red. PennDOT access control 1,
-          Limited access, is red anyway, as are FHWA interstate and freeway classes where that
-          access-control code is not published. A section is at least amber
+          with a posted speed under 45 mph stays amber instead of red, unless volume is over
+          5,000 vehicles per day. Volume over 5,000 is red. PennDOT access control 1, Limited
+          access, is red anyway, as are FHWA interstate and freeway classes where that
+          access-control code is not published. Speed over 40 mph with volume over 2,000 and under
+          5,000 and a shoulder under 4 ft is amber. A section is at least amber
           when the published shoulder is under 2 ft (including 0 ft), posted speed is over 40 mph,
           or volume is over 1,000 vehicles per day. Volume under 400 vehicles per day is green only
-          when it is not forced amber or red. A missing speed is not red. Records that publish a
+          when it is not forced amber or red. A missing speed is not red on its own; volume over
+          5,000 or limited access still is. Records that publish a
           volume but no line are left off the map.{" "}
           <span className="text-fg">scripts/fetch-penndot-lancaster.py</span> refreshes these
           counties and leaves the other places in the bundled file.

@@ -33,6 +33,9 @@ export const LANCASTER_SHOULDER_AMBER_FT = 2;
 export const LANCASTER_SPEED_AMBER_MPH = 40;
 export const LANCASTER_VOLUME_AMBER = 1000;
 export const LANCASTER_VOLUME_GREEN = 400;
+export const LANCASTER_VOLUME_RED = 5000;
+export const LANCASTER_MID_VOLUME = 2000;
+export const LANCASTER_MID_SHOULDER_FT = 4;
 export const LANCASTER_WIDE_SHOULDER_FT = 4;
 export const LANCASTER_WIDE_SHOULDER_SPEED_MPH = 45;
 
@@ -77,14 +80,31 @@ export function lancasterShoulderCapsRed(shoulderFt, speedMph) {
   );
 }
 
+/** Speed over 40, volume between 2,000 and 5,000, and a shoulder under 4 ft. */
+export function lancasterMidAmber(aadt, speedMph, shoulderFt) {
+  return (
+    Number.isFinite(speedMph) &&
+    speedMph > LANCASTER_SPEED_AMBER_MPH &&
+    aadt > LANCASTER_MID_VOLUME &&
+    aadt < LANCASTER_VOLUME_RED &&
+    Number.isFinite(shoulderFt) &&
+    shoulderFt < LANCASTER_MID_SHOULDER_FT
+  );
+}
+
 /**
- * Lancaster PennDOT color. Red is both volume and speed in the upper 20%,
- * unless the shoulder is wider than 4 ft and the posted speed is under 45 mph.
- * That cap stays at amber. Otherwise amber is the minimum when the shoulder is
- * under 2 ft, posted speed is over 40, or volume is over 1,000. Volume under
- * 400 is green only when amber and red do not apply.
+ * PennDOT color for the Lancaster region.
+ * Limited access is handled before this and is always red.
+ * Volume over 5,000 is red and beats the wide-shoulder cap.
+ * A shoulder wider than 4 ft with a posted speed under 45 mph cannot be red.
+ * Speed over 40 with volume over 2,000 and under 5,000 and a shoulder under 4 ft is amber.
+ * Amber is also the minimum for a shoulder under 2 ft, speed over 40, or volume over 1,000.
+ * Volume under 400 is green only when amber and red do not apply.
+ * Otherwise red is both volume and speed in the upper 20%.
  */
 export function lancasterBand(aadt, speedMph, shoulderFt, volumeCutoff, speedCutoff) {
+  if (aadt > LANCASTER_VOLUME_RED) return "red";
+  if (lancasterMidAmber(aadt, speedMph, shoulderFt)) return "orange";
   const relative = relativeBand(aadt, speedMph, volumeCutoff, speedCutoff);
   const capped = lancasterShoulderCapsRed(shoulderFt, speedMph);
   if (relative === "red" && !capped) return "red";

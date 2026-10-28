@@ -79,6 +79,20 @@ test("Lancaster PennDOT: red wins, then amber, then volume under 400 is green", 
   assert.equal(lancasterBand(200, 30, 6, 10000, 60), "green");
   assert.equal(lancasterBand(200, 35, 6, 100, 30), "green");
 
+  // Volume over 5,000 is red and beats the wide-shoulder cap.
+  assert.equal(lancasterBand(5001, 40, 10, 10000, 80), "red");
+  assert.equal(lancasterBand(6000, null, null, 10000, 80), "red");
+  assert.equal(lancasterBand(5000, 40, 10, 1000, 30), "orange");
+
+  // Speed over 40, volume over 2,000 and under 5,000, shoulder under 4 ft blocks upper-20% red.
+  assert.equal(lancasterBand(3000, 41, 3.9, 100, 20), "orange");
+  assert.equal(lancasterBand(2001, 41, 0, 100, 20), "orange");
+  assert.equal(lancasterBand(4999, 41, 3, 100, 20), "orange");
+  assert.equal(lancasterBand(3000, 40, 3, 100, 20), "red");
+  assert.equal(lancasterBand(2000, 41, 3, 100, 20), "red");
+  assert.equal(lancasterBand(3000, 41, 4, 100, 20), "red");
+  assert.equal(lancasterBand(3000, 41, null, 100, 20), "red");
+
   // At or above 400, with no amber trigger, the upper-20% rule still colors one-high amber.
   assert.equal(lancasterBand(500, 25, 8, 400, 30), "orange");
   assert.equal(lancasterBand(500, 25, 8, 10000, 60), "green");
@@ -151,7 +165,7 @@ test("limited access is red and beats the wide-shoulder cap", () => {
   });
   rows.push({
     id: "partial",
-    aadt: 20000,
+    aadt: 4900,
     speedMph: 40,
     shoulderFt: 8,
     accessControl: "2",

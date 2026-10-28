@@ -55,9 +55,9 @@ const BAND_COPY: Record<TrafficBandName, string> = {
 };
 
 const LANCASTER_BAND_COPY: Record<TrafficBandName, string> = {
-  red: "Volume and speed are both in the upper 20% of the sections drawn in this view. A shoulder wider than 4 ft with a posted speed under 45 mph would have stayed amber.",
+  red: "Limited access, volume over 5,000 vehicles per day, or both volume and speed in the upper 20%. A shoulder wider than 4 ft with a posted speed under 45 mph stays amber unless volume is over 5,000 or the road is limited access.",
   orange:
-    "Amber because the shoulder is under 2 ft, posted speed is over 40 mph, volume is over 1,000 vehicles per day, only one of volume and speed is in the upper 20%, or a shoulder wider than 4 ft kept a slow road from turning red.",
+    "Amber because speed is over 40 mph with volume over 2,000 and under 5,000 and a shoulder under 4 ft, or the shoulder is under 2 ft, speed is over 40, volume is over 1,000, or a wide slow shoulder kept the road from turning red.",
   green:
     "Volume under 400 vehicles per day is green only when shoulder, speed, and volume do not force amber or red.",
 };
@@ -606,7 +606,7 @@ export function TrafficMap() {
             title="Red · high / high"
             body={
               lancasterColors
-                ? "Limited-access highways are red. Other roads are red when volume and speed are both in the upper 20%, unless the shoulder is wider than 4 ft and the posted speed is under 45 mph."
+                ? "Limited-access highways are red. Volume over 5,000 vehicles per day is red. Otherwise both in the upper 20%, unless the shoulder is wider than 4 ft and speed is under 45 mph."
                 : "Volume and speed are both in the upper 20%."
             }
             count={counts.red}
@@ -616,7 +616,7 @@ export function TrafficMap() {
             title={lancasterColors ? "Amber · forced" : "Orange · one high"}
             body={
               lancasterColors
-                ? "Shoulder under 2 ft (including 0), posted speed over 40 mph, or volume over 1,000 vehicles per day. A shoulder wider than 4 ft with a posted speed under 45 mph also stays amber instead of red."
+                ? "Speed over 40 mph, volume over 2,000 and under 5,000, and a shoulder under 4 ft. Also shoulder under 2 ft, speed over 40, or volume over 1,000. A shoulder wider than 4 ft and speed under 45 mph stays amber, unless volume is over 5,000."
                 : "Volume and/or speed are high, but not both in the upper 20%."
             }
             count={counts.orange}
@@ -638,8 +638,14 @@ export function TrafficMap() {
         <p className="mt-3 text-sm text-muted">
           {lancasterColors ? (
             <>
-              Red is both volume and speed at or above the 80th percentile of the sections drawn
-              here
+              In this PennDOT region, red wins over amber. Limited access (PennDOT access control 1,
+              or an interstate or freeway where that code is missing) is red. Volume over 5,000
+              vehicles per day is red, including when the shoulder is wider than 4 ft and the posted
+              speed is under 45 mph. That wide-shoulder cap still keeps other roads at amber. A road
+              is also amber when speed is over 40 mph, volume is over 2,000 and under 5,000, and the
+              shoulder is under 4 ft. Amber is the minimum for a shoulder under 2 ft, speed over 40,
+              or volume over 1,000. Volume under 400 is green only when it is not forced amber or
+              red. Otherwise red is both volume and speed at or above the 80th percentile
               {volumeCutoff != null && speedCutoff != null ? (
                 <>
                   {" "}
@@ -648,14 +654,7 @@ export function TrafficMap() {
                   and <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>)
                 </>
               ) : null}
-              . PennDOT access control 1 (Limited access) is red even when the shoulder is wide and
-              the posted speed is under 45 mph. That amber cap applies only to roads that are not
-              limited access. Amber is the minimum when the published shoulder is under
-              2 ft, posted speed is over 40 mph, or volume is over 1,000 vehicles per day. Volume
-              under 400 vehicles per day is
-              green only when those amber rules do not apply and the section is not red. A section
-              with at least 400 vehicles per day can still be amber when only volume or only speed
-              is in the upper 20%.
+              .
             </>
           ) : volumeCutoff != null && speedCutoff != null ? (
             <>
