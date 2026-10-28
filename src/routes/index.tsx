@@ -26,8 +26,8 @@ function Desk() {
           Bicycle-Automotive Collisions
         </h1>
         <p className="max-w-2xl text-base text-muted">
-          A curated record of bicycle-automotive collisions on United States roads. The
-          file is publicly reported cases, not a complete national census.{" "}
+          Cyclist fatalities from NHTSA FARS, Pennsylvania bicycle injuries and deaths from PennDOT,
+          and named public reports when a victim was identified.{" "}
           <Link to="/traffic" className="text-accent underline-offset-4 hover:underline">
             Traffic volume
           </Link>{" "}
@@ -38,7 +38,7 @@ function Desk() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Kpi label="Crashes filed" value={formatCompact(totals.crashes)} />
         <Kpi label="Killed" value={formatCompact(totals.fatalities)} />
-        <Kpi label="Serious injury" value={formatCompact(totals.injured)} />
+        <Kpi label="Injured" value={formatCompact(totals.injured)} />
         <Kpi label="States" value={formatCompact(totals.states)} />
         <Kpi label="Last 12 months" value={formatCompact(totals.last12Months)} />
         <Kpi label="Collisions" value={formatCompact(totals.killed + totals.seriousInjury)} />
@@ -88,18 +88,20 @@ function Desk() {
             <h2 className="mt-1 font-display text-xl text-fg">About this file</h2>
             <p className="mt-2 text-sm text-muted">{DESK_FRAMING.note}</p>
             <dl className="mt-4 space-y-3">
-              <StatLine label="Killed (outcome)" value={formatCompact(totals.killed)} />
+              <StatLine label="Curated reports" value={formatCompact(totals.curated)} />
+              <StatLine label="NHTSA FARS" value={formatCompact(totals.fars)} />
+              <StatLine label="PennDOT" value={formatCompact(totals.penndot)} />
               <StatLine
-                label="Serious injury (outcome)"
-                value={formatCompact(totals.seriousInjury)}
+                label="News queue"
+                value={formatCompact(totals.newsPending)}
               />
-              <StatLine label="States in file" value={formatCompact(totals.states)} />
             </dl>
             <Link
-              to="/briefing"
+              to="/crashes"
+              search={{ queue: "pending" }}
               className="mt-4 inline-flex items-center gap-1 text-sm text-accent hover:underline"
             >
-              Read the briefing <ArrowRight className="size-3.5" />
+              Review news queue <ArrowRight className="size-3.5" />
             </Link>
           </div>
 

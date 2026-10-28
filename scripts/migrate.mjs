@@ -66,6 +66,12 @@ async function main() {
       count += 1;
     }
     console.log(count ? `[migrate] done — ${count} migration(s) applied.` : "[migrate] up to date.");
+    const { loadCrashImports } = await import("./load-crash-imports.mjs");
+    const imported = await loadCrashImports(
+      async (text, params = []) => (await client.query(text, params)).rows,
+      { root: join(dirname(fileURLToPath(import.meta.url)), "..") },
+    );
+    console.log("[migrate] crash imports", imported);
   } finally {
     client.release();
     await pool.end();

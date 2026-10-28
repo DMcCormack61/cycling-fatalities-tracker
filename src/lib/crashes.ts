@@ -18,6 +18,8 @@ export const CRASH_TYPES = [
 
 export const OUTCOMES = ["killed", "serious_injury"] as const;
 
+export const INGEST_SOURCES = ["curated", "fars", "penndot", "news"] as const;
+
 export const SEVERITIES = ["critical", "high", "moderate", "low"] as const;
 
 export const DRIVER_STATUSES = [
@@ -32,6 +34,7 @@ export type CrashType = (typeof CRASH_TYPES)[number];
 export type Outcome = (typeof OUTCOMES)[number];
 export type Severity = (typeof SEVERITIES)[number];
 export type DriverStatus = (typeof DRIVER_STATUSES)[number];
+export type IngestSource = (typeof INGEST_SOURCES)[number];
 /** How precise the filed coordinates are. Omitted on older rows. */
 export type LocationPrecision = "exact" | "town" | "country";
 
@@ -67,6 +70,10 @@ export type Crash = {
   sourceName: string;
   sourceUrl: string | null;
   verified: boolean;
+  /** curated, fars, penndot, or news. Older rows are curated. */
+  ingestSource?: IngestSource | null;
+  /** published rows are in the desk totals. pending is the news queue. */
+  reviewStatus?: "published" | "pending" | "rejected" | null;
   /** Optional pre-resolved fallback when site coordinates are absent. */
   approxLatitude?: number | null;
   approxLongitude?: number | null;
@@ -109,6 +116,8 @@ export type CrashRow = {
   source_name: string;
   source_url: string | null;
   verified: boolean;
+  ingest_source?: string | null;
+  review_status?: string | null;
 };
 
 export type CrashFilters = {
@@ -119,13 +128,24 @@ export type CrashFilters = {
   severity?: string;
   year?: string;
   state?: string;
+  source?: string;
+  queue?: string;
+  /** Page number. Named `p` because `page` is reserved by the dev server and redirects. */
+  p?: string;
 };
 
-/** How to read the curated file — public reports, not a national census. */
+/** How to read the file: official censuses plus named reports. News stays out until reviewed. */
 export const DESK_FRAMING = {
-  source: "Curated public reports",
-  note: "A small set of publicly reported US bicycle-automotive collisions, with names and news sources when they were published. Not a complete census and not an official traffic-safety total.",
+  source: "FARS, PennDOT, and curated reports",
+  note: "Cyclist fatalities from the latest complete NHTSA FARS annual files, Pennsylvania bicycle crashes with a death or injury from PennDOT, and a small set of named public reports. News headlines stay in a review queue and are not in these totals. FARS and PennDOT do not publish victim names.",
 };
+
+export function ingestLabel(source: string | null | undefined): string {
+  if (source === "fars") return "NHTSA FARS";
+  if (source === "penndot") return "PennDOT";
+  if (source === "news") return "News";
+  return "Curated report";
+}
 
 function numOrNull(value: unknown): number | null {
   if (value == null || value === "") return null;
@@ -178,7 +198,19 @@ export function mapCrash(row: CrashRow): Crash {
     sourceName: row.source_name,
     sourceUrl: row.source_url,
     verified: Boolean(row.verified),
+    ingestSource: ingestSourceOrNull(row.ingest_source),
+    reviewStatus: reviewStatusOrNull(row.review_status),
   };
+}
+
+function ingestSourceOrNull(value: unknown): Crash["ingestSource"] {
+  if (value === "curated" || value === "fars" || value === "penndot" || value === "news") return value;
+  return null;
+}
+
+function reviewStatusOrNull(value: unknown): Crash["reviewStatus"] {
+  if (value === "published" || value === "pending" || value === "rejected") return value;
+  return null;
 }
 
 export function typeLabel(type: string): string {

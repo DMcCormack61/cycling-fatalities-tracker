@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { SeverityBadge } from "@/components/severity-badge";
-import { outcomeLabel, typeLabel, type Crash } from "@/lib/crashes";
+import { outcomeLabel, typeLabel, ingestLabel, type Crash } from "@/lib/crashes";
 import { formatCompact, formatDate } from "@/lib/format";
 
 export function CrashRow({ crash }: { crash: Crash }) {
@@ -19,6 +19,10 @@ export function CrashRow({ crash }: { crash: Crash }) {
           {crash.victimName ? `${crash.victimName} · ` : ""}
           {crash.city}, {crash.stateCode}
           <span className="text-subtle"> · {typeLabel(crash.crashType)}</span>
+          <span className="text-subtle"> · {ingestLabel(crash.ingestSource)}</span>
+          {crash.reviewStatus === "pending" ? (
+            <span className="text-subtle"> · needs review</span>
+          ) : null}
         </p>
       </div>
       <div className="flex items-center gap-3">

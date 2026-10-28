@@ -25,7 +25,7 @@ async function insertCrash(sql: Sql, row: SeedRow): Promise<void> {
       city, region, latitude, longitude, crash_type, outcome, severity, fatalities, injured,
       victim_name, victim_age_band, driver_status, vehicle_type, roadway_type, lighting,
       helmet, police_report_id, summary, context, source_name, source_url, verified,
-      approx_latitude, approx_longitude, approx_zoom, location_precision
+      approx_latitude, approx_longitude, approx_zoom, location_precision, ingest_source, review_status
     ) values (
       ${row.id}, ${row.title}, ${row.locationName}, ${row.occurredOn}::date,
       ${row.country}, ${row.countryCode}, ${row.state}, ${row.stateCode},
@@ -36,7 +36,7 @@ async function insertCrash(sql: Sql, row: SeedRow): Promise<void> {
       ${row.roadwayType}, ${row.lighting}, ${row.helmet}, ${row.policeReportId},
       ${row.summary}, ${row.context}, ${row.sourceName}, ${row.sourceUrl}, true,
       ${row.approxLatitude ?? null}, ${row.approxLongitude ?? null},
-      ${row.approxZoom ?? null}, ${row.locationPrecision ?? null}
+      ${row.approxZoom ?? null}, ${row.locationPrecision ?? null}, 'curated', 'published'
     )
     on conflict (id) do update set
       title = excluded.title,
@@ -71,7 +71,9 @@ async function insertCrash(sql: Sql, row: SeedRow): Promise<void> {
       approx_latitude = excluded.approx_latitude,
       approx_longitude = excluded.approx_longitude,
       approx_zoom = excluded.approx_zoom,
-      location_precision = excluded.location_precision
+      location_precision = excluded.location_precision,
+      ingest_source = excluded.ingest_source,
+      review_status = excluded.review_status
   `;
 }
 
@@ -103,6 +105,8 @@ export type MapPoint = {
   injured: number;
   latitude: number;
   longitude: number;
+  ingestSource: string | null;
+  victimName: string | null;
 };
 
 export type RegionStat = { region: string; crashes: number; fatalities: number; injured: number };
@@ -125,6 +129,10 @@ export type DashboardData = {
     last12Months: number;
     killed: number;
     seriousInjury: number;
+    curated: number;
+    fars: number;
+    penndot: number;
+    newsPending: number;
   };
   recent: Crash[];
   mapPoints: MapPoint[];
@@ -147,15 +155,23 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
       last12: number;
       killed: number;
       serious: number;
+      curated: number;
+      fars: number;
+      penndot: number;
+      newsPending: number;
     }>`
       select
-        count(*)::int as crashes,
-        coalesce(sum(fatalities), 0)::int as fatalities,
-        coalesce(sum(injured), 0)::int as injured,
-        count(distinct state)::int as states,
-        count(*) filter (where occurred_on >= (current_date - interval '12 months'))::int as last12,
-        count(*) filter (where outcome = 'killed')::int as killed,
-        count(*) filter (where outcome = 'serious_injury')::int as serious
+        count(*) filter (where verified)::int as crashes,
+        coalesce(sum(fatalities) filter (where verified), 0)::int as fatalities,
+        coalesce(sum(injured) filter (where verified), 0)::int as injured,
+        count(distinct state) filter (where verified)::int as states,
+        count(*) filter (where verified and occurred_on >= (current_date - interval '12 months'))::int as last12,
+        count(*) filter (where verified and outcome = 'killed')::int as killed,
+        count(*) filter (where verified and outcome = 'serious_injury')::int as serious,
+        count(*) filter (where verified and ingest_source = 'curated')::int as curated,
+        count(*) filter (where verified and ingest_source = 'fars')::int as fars,
+        count(*) filter (where verified and ingest_source = 'penndot')::int as penndot,
+        count(*) filter (where review_status = 'pending')::int as "newsPending"
       from crashes
     `;
 
@@ -164,9 +180,13 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         city, region, latitude, longitude, crash_type, outcome, severity, fatalities, injured,
         victim_name, victim_age_band, driver_status, vehicle_type, roadway_type, lighting,
         helmet, police_report_id, summary, context, source_name, source_url, verified,
-        approx_latitude, approx_longitude, approx_zoom, location_precision
+        approx_latitude, approx_longitude, approx_zoom, location_precision,
+        ingest_source, review_status
       from crashes
-      order by occurred_on desc
+      where verified
+      order by occurred_on desc,
+        case ingest_source when 'curated' then 0 when 'news' then 1 else 2 end,
+        id
       limit 8
     `;
 
@@ -184,11 +204,14 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
       injured: number;
       latitude: number | null;
       longitude: number | null;
+      ingestSource: string | null;
+      victimName: string | null;
     }>`
       select id, title, city, country, state, occurred_on as "occurredOn",
         crash_type as "crashType", outcome, severity, fatalities, injured,
-        latitude, longitude
+        latitude, longitude, ingest_source as "ingestSource", victim_name as "victimName"
       from crashes
+      where verified
       order by occurred_on desc
     `;
 
@@ -197,6 +220,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         coalesce(sum(fatalities), 0)::int as fatalities,
         coalesce(sum(injured), 0)::int as injured
       from crashes
+      where verified
       group by region
       order by crashes desc
     `;
@@ -204,6 +228,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
     const byType = await sql<TypeStat>`
       select crash_type as type, count(*)::int as crashes
       from crashes
+      where verified
       group by crash_type
       order by crashes desc
     `;
@@ -213,6 +238,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         count(*)::int as crashes,
         coalesce(sum(fatalities), 0)::int as fatalities
       from crashes
+      where verified
       group by 1
       order by 1
     `;
@@ -223,6 +249,7 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         coalesce(sum(fatalities), 0)::int as fatalities,
         coalesce(sum(injured), 0)::int as injured
       from crashes
+      where verified
       group by state, state_code
       order by fatalities desc, crashes desc
     `;
@@ -236,6 +263,10 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         last12Months: totals?.last12 ?? 0,
         killed: totals?.killed ?? 0,
         seriousInjury: totals?.serious ?? 0,
+        curated: totals?.curated ?? 0,
+        fars: totals?.fars ?? 0,
+        penndot: totals?.penndot ?? 0,
+        newsPending: totals?.newsPending ?? 0,
       },
       recent: recentRows.map(mapCrash),
       mapPoints: points.flatMap((p) => {
@@ -254,6 +285,8 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
             severity: p.severity,
             fatalities: Number(p.fatalities),
             injured: Number(p.injured),
+            ingestSource: p.ingestSource,
+            victimName: p.victimName,
             latitude: point.latitude,
             longitude: point.longitude,
           },
@@ -267,9 +300,18 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
   },
 );
 
+export type CrashPage = {
+  crashes: Crash[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+const PAGE_SIZE = 40;
+
 export const listCrashes = createServerFn({ method: "GET" })
   .validator((input: CrashFilters) => input)
-  .handler(async ({ data }): Promise<Crash[]> => {
+  .handler(async ({ data }): Promise<CrashPage> => {
     await ensureCuratedSeed();
     const sql = await getSql();
     const q = data.q?.trim().toLowerCase() ?? "";
@@ -279,13 +321,13 @@ export const listCrashes = createServerFn({ method: "GET" })
     const severity = data.severity || "";
     const year = data.year || "";
     const state = data.state || "";
+    const source = data.source || "";
+    const queue = data.queue === "pending" || data.queue === "all" ? data.queue : "";
+    const requested = Math.max(1, Number(data.p) || 1);
+    const offset = (requested - 1) * PAGE_SIZE;
 
-    const rows = await sql<CrashRow>`
-      select id, title, location_name, occurred_on, country, country_code, state, state_code,
-        city, region, latitude, longitude, crash_type, outcome, severity, fatalities, injured,
-        victim_name, victim_age_band, driver_status, vehicle_type, roadway_type, lighting,
-        helmet, police_report_id, summary, context, source_name, source_url, verified,
-        approx_latitude, approx_longitude, approx_zoom, location_precision
+    const [count] = await sql<{ total: number }>`
+      select count(*)::int as total
       from crashes
       where
         (${q} = '' or lower(title) like ${"%" + q + "%"}
@@ -300,9 +342,52 @@ export const listCrashes = createServerFn({ method: "GET" })
         and (${severity} = '' or severity = ${severity})
         and (${year} = '' or extract(year from occurred_on)::text = ${year})
         and (${state} = '' or state = ${state})
-      order by occurred_on desc
+        and (${source} = '' or ingest_source = ${source})
+        and (
+          (${queue} = 'all' and review_status <> 'rejected')
+          or (${queue} = 'pending' and review_status = 'pending')
+          or (${queue} = '' and verified and review_status = 'published')
+        )
     `;
-    return rows.map(mapCrash);
+
+    const rows = await sql<CrashRow>`
+      select id, title, location_name, occurred_on, country, country_code, state, state_code,
+        city, region, latitude, longitude, crash_type, outcome, severity, fatalities, injured,
+        victim_name, victim_age_band, driver_status, vehicle_type, roadway_type, lighting,
+        helmet, police_report_id, summary, context, source_name, source_url, verified,
+        approx_latitude, approx_longitude, approx_zoom, location_precision,
+        ingest_source, review_status
+      from crashes
+      where
+        (${q} = '' or lower(title) like ${"%" + q + "%"}
+          or lower(city) like ${"%" + q + "%"}
+          or lower(state) like ${"%" + q + "%"}
+          or lower(location_name) like ${"%" + q + "%"}
+          or lower(coalesce(victim_name, '')) like ${"%" + q + "%"}
+          or lower(summary) like ${"%" + q + "%"})
+        and (${region} = '' or region = ${region})
+        and (${type} = '' or crash_type = ${type})
+        and (${outcome} = '' or outcome = ${outcome})
+        and (${severity} = '' or severity = ${severity})
+        and (${year} = '' or extract(year from occurred_on)::text = ${year})
+        and (${state} = '' or state = ${state})
+        and (${source} = '' or ingest_source = ${source})
+        and (
+          (${queue} = 'all' and review_status <> 'rejected')
+          or (${queue} = 'pending' and review_status = 'pending')
+          or (${queue} = '' and verified and review_status = 'published')
+        )
+      order by occurred_on desc,
+        case ingest_source when 'curated' then 0 when 'news' then 1 when 'fars' then 2 else 3 end,
+        id
+      limit ${PAGE_SIZE} offset ${offset}
+    `;
+    return {
+      crashes: rows.map(mapCrash),
+      total: count?.total ?? 0,
+      page: requested,
+      pageSize: PAGE_SIZE,
+    };
   });
 
 export type CrashFile = Crash & { mapPlace: CrashMapPlace | null };
@@ -352,7 +437,8 @@ export const getCrash = createServerFn({ method: "GET" })
         city, region, latitude, longitude, crash_type, outcome, severity, fatalities, injured,
         victim_name, victim_age_band, driver_status, vehicle_type, roadway_type, lighting,
         helmet, police_report_id, summary, context, source_name, source_url, verified,
-        approx_latitude, approx_longitude, approx_zoom, location_precision
+        approx_latitude, approx_longitude, approx_zoom, location_precision,
+        ingest_source, review_status
       from crashes
       where id = ${id}
       limit 1
@@ -366,6 +452,7 @@ export const listYears = createServerFn({ method: "GET" }).handler(async (): Pro
   const rows = await sql<{ year: number }>`
       select distinct extract(year from occurred_on)::int as year
       from crashes
+      where review_status <> 'rejected'
       order by year desc
     `;
   return rows.map((r) => r.year);
@@ -376,7 +463,9 @@ export const listStates = createServerFn({ method: "GET" }).handler(
     await ensureCuratedSeed();
     const sql = await getSql();
     const rows = await sql<{ state: string }>`
-      select distinct state from crashes order by state
+      select distinct state from crashes
+      where review_status <> 'rejected'
+      order by state
     `;
     return rows.map((r) => r.state);
   },

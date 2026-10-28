@@ -1,0 +1,71 @@
+{
+  "fars": {
+    "file": "data/crash-imports/fars.json",
+    "rows": 3393,
+    "byYear": {
+      "2022": 1117,
+      "2023": 1173,
+      "2024": 1103
+    },
+    "years": [
+      2022,
+      2023,
+      2024
+    ],
+    "latestCompleteYear": 2024,
+    "personTypes": [
+      "6 Bicyclist",
+      "7 Other pedalcyclist"
+    ],
+    "injurySeverity": "4 fatal",
+    "names": "not published; victimName is null",
+    "verified": true,
+    "earlyEstimate": {
+      "usableForRows": false,
+      "note": "NHTSA early estimates for 2025 (Crash Stats DOT HS 813 768 and 813 800) report a pedalcyclist percentage change, not a person-level file. GetCrashesByPerson requires an exact age, sex, seat, and injury, so it is not a census extract. No 2025 FARS rows were created from those estimates."
+    },
+    "source": "https://static.nhtsa.gov/nhtsa/downloads/FARS/{year}/National/FARS{year}NationalCSV.zip",
+    "refresh": "python3 scripts/fetch-fars-cyclists.py && node scripts/load-crash-imports.mjs"
+  },
+  "penndot": {
+    "file": "data/crash-imports/penndot.json",
+    "rows": 4640,
+    "byYear": {
+      "2022": 845,
+      "2023": 1166,
+      "2024": 1271,
+      "2025": 1358
+    },
+    "years": [
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "scope": "Pennsylvania statewide, bicycle-involved crashes with a bicyclist death, suspected serious injury, or any injury",
+    "lancasterRegionRows": 934,
+    "names": "not published; victimName is null",
+    "date": "year and month only; occurredOn is the first of the month",
+    "verified": true,
+    "source": "https://gis.penndot.pa.gov/gishub/crashZip/Statewide/Statewide_{year}.zip",
+    "refresh": "python3 scripts/fetch-penndot-bike.py && node scripts/load-crash-imports.mjs"
+  },
+  "news": {
+    "file": "data/crash-imports/news.json",
+    "rows": 9,
+    "pending": 9,
+    "published": 0,
+    "rejected": 0,
+    "verified": false,
+    "cap": 250,
+    "queries": [
+      "\"cyclist killed\"",
+      "\"bicyclist killed\"",
+      "\"bicyclist struck\"",
+      "\"bicycle crash\" injured",
+      "\"cyclist injured\""
+    ],
+    "note": "Headline extraction only. Pending rows stay out of desk totals until promote-news-crash.mjs.",
+    "refresh": "node scripts/fetch-news-crashes.mjs && node scripts/load-crash-imports.mjs"
+  }
+}

@@ -28,11 +28,23 @@ function Briefing() {
       <section>
         <h2 className="font-display text-2xl text-fg">What is in — and out</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-muted">
-          <li>In: US bicycle-automotive collisions, with an outcome of killed or serious injury.</li>
-          <li>In: curated filings with date, place, mechanism, outcome, and a named source.</li>
-          <li>In: victim name when known (optional when withheld).</li>
-          <li>Out: property-only scrapes, unsourced social posts, and non-US geography (v1).</li>
-          <li>Out: create/edit admin UI — seed file only for now.</li>
+          <li>In: US bicycle-automotive collisions with a death or an injury.</li>
+          <li>
+            In: NHTSA FARS pedalcyclist fatalities (person type bicyclist or other pedalcyclist)
+            from the latest complete annual files, with coordinates when FARS published them.
+            FARS does not publish names.
+          </li>
+          <li>
+            In: PennDOT bicycle-involved crashes in Pennsylvania with a bicyclist death or any
+            injury, including Lancaster County and the counties that border it. The public
+            extract has a month, not a calendar day, and no names.
+          </li>
+          <li>In: curated filings with a victim name and a news source when one was published.</li>
+          <li>
+            In, but not in the totals: news headlines in the review queue until they are promoted
+            with <span className="font-mono text-xs">scripts/promote-news-crash.mjs</span>.
+          </li>
+          <li>Out: property-damage-only crashes, unsourced social posts, and invented names or places.</li>
         </ul>
       </section>
 
