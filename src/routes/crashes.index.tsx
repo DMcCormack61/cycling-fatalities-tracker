@@ -69,7 +69,7 @@ function Ledger() {
         <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">Crashes</p>
         <h1 className="font-display text-3xl tracking-tight text-fg">All documented filings</h1>
         <p className="max-w-2xl text-muted">
-          Filter the curated US KSI record by place, mechanism, outcome, and year.
+          Filter the curated bicycle-automotive collision record by place, mechanism, outcome, and year.
         </p>
       </header>
 

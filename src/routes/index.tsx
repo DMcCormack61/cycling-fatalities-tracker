@@ -20,14 +20,14 @@ function Desk() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">
-          US-wide · Killed & serious injury
+          United States
         </p>
         <h1 className="max-w-3xl font-display text-3xl leading-tight tracking-tight text-fg sm:text-4xl">
-          Cyclists killed or badly hurt by drivers
+          Bicycle-Automotive Collisions
         </h1>
         <p className="max-w-2xl text-base text-muted">
-          A curated KSI desk for cyclists killed or seriously injured on United States
-          roads. The file is publicly reported cases, not a complete national census.{" "}
+          A curated record of bicycle-automotive collisions on United States roads. The
+          file is publicly reported cases, not a complete national census.{" "}
           <Link to="/traffic" className="text-accent underline-offset-4 hover:underline">
             Traffic volume
           </Link>{" "}
@@ -41,7 +41,7 @@ function Desk() {
         <Kpi label="Serious injury" value={formatCompact(totals.injured)} />
         <Kpi label="States" value={formatCompact(totals.states)} />
         <Kpi label="Last 12 months" value={formatCompact(totals.last12Months)} />
-        <Kpi label="KSI cases" value={formatCompact(totals.killed + totals.seriousInjury)} />
+        <Kpi label="Collisions" value={formatCompact(totals.killed + totals.seriousInjury)} />
       </section>
 
       <CrashAtlas points={data.mapPoints} />

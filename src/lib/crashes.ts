@@ -124,7 +124,7 @@ export type CrashFilters = {
 /** How to read the curated file — public reports, not a national census. */
 export const DESK_FRAMING = {
   source: "Curated public reports",
-  note: "A small set of publicly reported US cyclist killed-or-seriously-injured cases, with names and news sources when they were published. Not a complete census and not an official traffic-safety total.",
+  note: "A small set of publicly reported US bicycle-automotive collisions, with names and news sources when they were published. Not a complete census and not an official traffic-safety total.",
 };
 
 function numOrNull(value: unknown): number | null {

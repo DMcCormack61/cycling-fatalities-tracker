@@ -5,7 +5,7 @@ export const Route = createFileRoute("/traffic")({
   component: TrafficPage,
   head: () => ({
     meta: [
-      { title: "Traffic volume and speed · Cycling Fatalities Tracker" },
+      { title: "Traffic volume and speed · Bicycle-Automotive Collisions" },
       {
         name: "description",
         content:

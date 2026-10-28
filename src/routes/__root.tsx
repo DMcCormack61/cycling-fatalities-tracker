@@ -11,7 +11,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { AppShell } from "@/components/app-shell";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "Cycling Fatalities Tracker";
+const APP_NAME = "Bicycle-Automotive Collisions";
 const host = import.meta.env.VITE_PUBLIC_HOSTNAME;
 const ogImage = host ? `https://${host}/og.jpg` : undefined;
 
@@ -31,7 +31,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "US cycling fatalities and serious injuries (KSI) tracker — curated crash desk modeled on an incident-desk layout.",
+          "Bicycle-Automotive Collisions — a curated United States record of crashes between people on bicycles and motor vehicles.",
       },
       { name: "apple-mobile-web-app-title", content: APP_NAME },
       { name: "theme-color", content: "#155eab" },

@@ -15,9 +15,9 @@ function Briefing() {
 
       <section className="space-y-3 text-base leading-relaxed text-muted">
         <p className="text-fg">
-          The Cycling Fatalities Tracker is a US-wide KSI (killed or serious injury) desk for
-          cyclists struck by drivers. Layout follows an incident-desk pattern: overview, ledger,
-          geography, and this briefing.
+          Bicycle-Automotive Collisions is a United States record of crashes between people
+          on bicycles and motor vehicles. Layout follows an incident-desk pattern: overview,
+          ledger, geography, and this briefing.
         </p>
         <p>
           <strong className="text-fg">{DESK_FRAMING.source}.</strong>{" "}
@@ -28,7 +28,7 @@ function Briefing() {
       <section>
         <h2 className="font-display text-2xl text-fg">What is in — and out</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-muted">
-          <li>In: US crashes where a cyclist was killed or seriously injured by a motor vehicle.</li>
+          <li>In: US bicycle-automotive collisions, with an outcome of killed or serious injury.</li>
           <li>In: curated filings with date, place, mechanism, outcome, and a named source.</li>
           <li>In: victim name when known (optional when withheld).</li>
           <li>Out: property-only scrapes, unsourced social posts, and non-US geography (v1).</li>

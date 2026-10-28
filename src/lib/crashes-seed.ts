@@ -3,7 +3,7 @@ import type { Crash } from "./crashes";
 type Seed = Omit<Crash, "verified">;
 
 /**
- * Curated US cyclist KSI cases from public news and agency releases.
+ * Curated US bicycle-automotive collisions from public news and agency releases.
  * Names, dates, and places follow those reports. Pins are reported
  * intersections, not surveyed crash coordinates. Not a complete census.
  */
