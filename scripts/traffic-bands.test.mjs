@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { classifySegments, trafficBand, upperFifthCutoff } from "../src/lib/traffic-bands.mjs";
+import {
+  classifySegments,
+  lancasterBand,
+  trafficBand,
+  upperFifthCutoff,
+} from "../src/lib/traffic-bands.mjs";
 
 test("80th percentile of 1..10 sits between 8 and 9", () => {
   const cutoff = upperFifthCutoff([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -42,6 +47,59 @@ test("a missing posted speed is not treated as a high speed", () => {
   assert.equal(byId["busy-fast"], "red");
   assert.equal(byId["fast-quiet"], "orange");
   assert.equal(byId["slow-0"], "green");
+});
+
+test("Lancaster PennDOT: red wins, then amber, then volume under 400 is green", () => {
+  // Cutoffs sit high, so the relative rule alone would leave these green.
+  assert.equal(lancasterBand(399, 25, 8, 10000, 60), "green");
+  assert.equal(lancasterBand(399, 25, null, 10000, 60), "green");
+  assert.equal(lancasterBand(399, 40, 2, 10000, 60), "green");
+  assert.equal(lancasterBand(1000, 25, 8, 10000, 60), "green");
+  assert.equal(lancasterBand(200, null, null, 10000, 60), "green");
+
+  assert.equal(lancasterBand(100, 25, 0, 10000, 60), "orange");
+  assert.equal(lancasterBand(100, 25, 1.9, 10000, 60), "orange");
+  assert.equal(lancasterBand(200, 41, 8, 10000, 60), "orange");
+  assert.equal(lancasterBand(1001, 25, 8, 10000, 60), "orange");
+  assert.equal(lancasterBand(1500, null, null, 10000, 60), "orange");
+  assert.equal(lancasterBand(200, null, 0, 10000, 60), "orange");
+
+  // Volume under 400 still yields to an amber trigger, and to red.
+  assert.equal(lancasterBand(300, 45, 8, 10000, 30), "orange");
+  assert.equal(lancasterBand(300, 35, 8, 10000, 30), "green");
+  assert.equal(lancasterBand(350, 70, 0, 200, 40), "red");
+
+  // At or above 400, with no amber trigger, the upper-20% rule still colors one-high amber.
+  assert.equal(lancasterBand(500, 25, 8, 400, 30), "orange");
+  assert.equal(lancasterBand(500, 25, 8, 10000, 60), "green");
+
+  const rows = [];
+  for (let i = 0; i < 7; i += 1) {
+    rows.push({ id: `quiet-${i}`, aadt: 50, speedMph: 25, shoulderFt: 8, service: "PennDOT local roads" });
+  }
+  rows.push({ id: "fast", aadt: 50, speedMph: 55, shoulderFt: 8, service: "PennDOT RMS" });
+  rows.push({ id: "busy-slow", aadt: 350, speedMph: 25, shoulderFt: 8, service: "PennDOT RMS" });
+  rows.push({ id: "both", aadt: 350, speedMph: 55, shoulderFt: 0, service: "PennDOT RMS" });
+  const { segments } = classifySegments(rows);
+  const byId = Object.fromEntries(segments.map((s) => [s.id, s.band]));
+  assert.equal(byId.both, "red");
+  assert.equal(byId["quiet-0"], "green");
+  assert.equal(byId.fast, "orange");
+  assert.equal(byId["busy-slow"], "green");
+
+  const hpms = classifySegments([
+    { id: "hpms-narrow", aadt: 100, speedMph: 25, shoulderFt: 0, service: "HPMS_FULL_PA_2023" },
+    ...Array.from({ length: 7 }, (_, i) => ({
+      id: `fill-${i}`,
+      aadt: 100,
+      speedMph: 25,
+      service: "HPMS_FULL_PA_2023",
+    })),
+    { id: "high-a", aadt: 5000, speedMph: 70, service: "HPMS_FULL_PA_2023" },
+    { id: "high-b", aadt: 5000, speedMph: 70, service: "HPMS_FULL_PA_2023" },
+  ]);
+  const hpmsById = Object.fromEntries(hpms.segments.map((s) => [s.id, s.band]));
+  assert.equal(hpmsById["hpms-narrow"], "green");
 });
 
 test("empty input has no cutoff", () => {

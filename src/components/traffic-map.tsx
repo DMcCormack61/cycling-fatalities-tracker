@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { classifySegments, type TrafficBandName } from "@/lib/traffic-bands.mjs";
+import {
+  classifySegments,
+  usesLancasterColors,
+  type TrafficBandName,
+} from "@/lib/traffic-bands.mjs";
 import {
   BIKE_LANE_COLOR,
   lanesInBounds,
@@ -48,6 +52,25 @@ const BAND_COPY: Record<TrafficBandName, string> = {
   orange: "Volume and/or speed are high, but not both in the upper 20%.",
   green: "Speed is low and volume is low — both sit below the upper 20% of this view.",
 };
+
+const LANCASTER_BAND_COPY: Record<TrafficBandName, string> = {
+  red: "Volume and speed are both in the upper 20% of the sections drawn in this view.",
+  orange:
+    "Amber because the shoulder is under 2 ft, posted speed is over 40 mph, volume is over 1,000 vehicles per day, or only one of volume and speed is in the upper 20%.",
+  green:
+    "Volume under 400 vehicles per day is green only when shoulder, speed, and volume do not force amber or red.",
+};
+
+function bandCopy(segment: { service?: string; band: TrafficBandName }): string {
+  return usesLancasterColors(segment) ? LANCASTER_BAND_COPY[segment.band] : BAND_COPY[segment.band];
+}
+
+function bandTitle(segment: { service?: string; band: TrafficBandName }): string {
+  if (!usesLancasterColors(segment)) return TRAFFIC_BAND_LABEL[segment.band];
+  if (segment.band === "orange") return "Amber";
+  if (segment.band === "green") return "Low volume";
+  return TRAFFIC_BAND_LABEL.red;
+}
 
 function readView(map: { getBounds: () => LBounds; getCenter: () => { lat: number; lng: number }; getZoom: () => number }): MapView {
   const bounds = map.getBounds();
@@ -327,6 +350,7 @@ export function TrafficMap() {
     for (const segment of classified.segments) tally[segment.band] += 1;
     return tally;
   }, [classified.segments]);
+  const lancasterColors = shown.length > 0 && shown.every((segment) => usesLancasterColors(segment));
 
   useEffect(() => {
     const leaflet = leafletRef.current;
@@ -576,14 +600,22 @@ export function TrafficMap() {
           />
           <LegendItem
             color={TRAFFIC_COLORS.orange}
-            title="Orange · one high"
-            body="Volume and/or speed are high, but not both in the upper 20%."
+            title={lancasterColors ? "Amber · forced" : "Orange · one high"}
+            body={
+              lancasterColors
+                ? "Shoulder under 2 ft (including 0), posted speed over 40 mph, or volume over 1,000 vehicles per day. Red still wins when both are in the upper 20%."
+                : "Volume and/or speed are high, but not both in the upper 20%."
+            }
             count={counts.orange}
           />
           <LegendItem
             color={TRAFFIC_COLORS.green}
-            title="Green · both low"
-            body="Speed is low and volume is low."
+            title={lancasterColors ? "Green · under 400" : "Green · both low"}
+            body={
+              lancasterColors
+                ? "Volume under 400 vehicles per day is green only when it is not forced amber or red."
+                : "Speed is low and volume is low."
+            }
             count={counts.green}
           />
         </ul>
@@ -591,7 +623,25 @@ export function TrafficMap() {
           <BikeLaneToggle on={lanesOn} onChange={setLanesOn} />
         </div>
         <p className="mt-3 text-sm text-muted">
-          {volumeCutoff != null && speedCutoff != null ? (
+          {lancasterColors ? (
+            <>
+              Red is unchanged: both volume and speed are at or above the 80th percentile of the
+              sections drawn here
+              {volumeCutoff != null && speedCutoff != null ? (
+                <>
+                  {" "}
+                  (
+                  <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} vehicles per day</span>{" "}
+                  and <span className="tabular-nums text-fg">{formatThreshold(speedCutoff)} mph</span>)
+                </>
+              ) : null}
+              . Amber is the minimum when the published shoulder is under 2 ft, posted speed is over
+              40 mph, or volume is over 1,000 vehicles per day. Volume under 400 vehicles per day is
+              green only when those amber rules do not apply and the section is not red. A section
+              with at least 400 vehicles per day can still be amber when only volume or only speed
+              is in the upper 20%.
+            </>
+          ) : volumeCutoff != null && speedCutoff != null ? (
             <>
               High means at or above the 80th percentile of the sections drawn here:{" "}
               <span className="tabular-nums text-fg">{formatThreshold(volumeCutoff)} vehicles per day</span>{" "}
@@ -687,9 +737,9 @@ export function TrafficMap() {
                     style={{ background: TRAFFIC_COLORS[selected.band] }}
                     aria-hidden
                   />
-                  {TRAFFIC_BAND_LABEL[selected.band]}
+                  {bandTitle(selected)}
                 </dd>
-                <dd className="text-xs text-muted">{BAND_COPY[selected.band]}</dd>
+                <dd className="text-xs text-muted">{bandCopy(selected)}</dd>
               </div>
             </dl>
           </>
@@ -746,7 +796,7 @@ export function TrafficMap() {
                     <span className="min-w-0">
                       <span className="block truncate text-fg">{segment.name}</span>
                       <span className="block truncate text-xs text-subtle">
-                        {TRAFFIC_BAND_LABEL[segment.band]}
+                        {bandTitle(segment)}
                         {segment.place !== "This view" ? ` · ${segment.place}` : ""}
                       </span>
                     </span>
