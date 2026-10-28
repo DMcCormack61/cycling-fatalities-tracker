@@ -187,6 +187,60 @@ def local_name(attrs: dict) -> str:
     return f"{road}, {town}" if town else road
 
 
+def chain_same_road(features: list[dict]) -> list[dict]:
+    """Join touching pieces that share a name and the same published numbers.
+
+    PennDOT splits one street into many short segments. At county zoom those
+    pieces are only a pixel or two, so the municipal network disappears.
+    Pieces stay separate when volume, speed, or shoulder width differ.
+    """
+    groups: dict[tuple, list[dict]] = {}
+    for feature in features:
+        key = (
+            feature.get("service"),
+            feature.get("name"),
+            feature.get("aadt"),
+            feature.get("speedMph"),
+            feature.get("shoulderFt"),
+        )
+        groups.setdefault(key, []).append(feature)
+
+    merged: list[dict] = []
+    for parts in groups.values():
+        unused = [list(part["coordinates"]) for part in parts]
+        chains: list[list[list[float]]] = []
+        while unused:
+            line = unused.pop()
+            grew = True
+            while grew:
+                grew = False
+                for index, other in enumerate(unused):
+                    start = (round(line[0][0], 4), round(line[0][1], 4))
+                    end = (round(line[-1][0], 4), round(line[-1][1], 4))
+                    other_start = (round(other[0][0], 4), round(other[0][1], 4))
+                    other_end = (round(other[-1][0], 4), round(other[-1][1], 4))
+                    if end == other_start:
+                        line = line + other[1:]
+                    elif end == other_end:
+                        line = line + other[-2::-1]
+                    elif start == other_end:
+                        line = other + line[1:]
+                    elif start == other_start:
+                        line = other[::-1] + line[1:]
+                    else:
+                        continue
+                    unused.pop(index)
+                    grew = True
+                    break
+            chains.append(line)
+        for line in chains:
+            base = dict(parts[0])
+            base["id"] = f"{parts[0]['id']}-{len(merged)}"
+            base["coordinates"] = simplify(line, limit=24)
+            merged.append(base)
+    return merged
+
+
 def main() -> None:
     print("local roads", flush=True)
     local = pages(
@@ -305,12 +359,15 @@ def main() -> None:
         "(EST_AVERAGE_DAILY_TRAFFIC, road name, and speed or shoulder when the record includes them). "
         "County code 36. Geometry is simplified."
     )
-    catalog["features"] = kept + features
+    chained = chain_same_road(features)
+    catalog["features"] = kept + chained
     OUT.write_text(json.dumps(catalog, separators=(",", ":")))
     print(
         "wrote",
+        len(chained),
+        "lancaster features from",
         len(features),
-        "lancaster features;",
+        "pieces;",
         "with speed",
         speed_hits,
         "with shoulder",

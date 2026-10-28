@@ -8,9 +8,9 @@ test("Lancaster County traffic is PennDOT and denser than the HPMS sample", () =
   const features = catalog.features.filter((row) => row.place === "Lancaster County");
   const local = features.filter((row) => row.service === "PennDOT local roads");
   const rms = features.filter((row) => row.service === "PennDOT RMS");
-  assert.ok(features.length > 4000, `expected thousands of county sections, got ${features.length}`);
-  assert.ok(local.length > 1500, `expected municipal streets, got ${local.length}`);
-  assert.ok(rms.length > 2500, `expected state routes, got ${rms.length}`);
+  assert.ok(features.length > 2000, `expected thousands of county sections, got ${features.length}`);
+  assert.ok(local.length > 500, `expected municipal streets, got ${local.length}`);
+  assert.ok(rms.length > 1500, `expected state routes, got ${rms.length}`);
   assert.match(catalog.sourceName, /PennDOT/);
   assert.match(catalog.note, /Lancaster County/);
   assert.match(catalog.sourceUrl, /gis\.penndot\.gov/);
@@ -34,6 +34,9 @@ test("Lancaster County traffic is PennDOT and denser than the HPMS sample", () =
       assert.ok(lat > 39.7 && lat < 40.4);
     }
   }
+
+  const ids = new Set(features.map((row) => row.id));
+  assert.equal(ids.size, features.length);
 
   const chicago = catalog.features.filter((row) => row.place === "Chicago");
   assert.equal(chicago.length, 108);

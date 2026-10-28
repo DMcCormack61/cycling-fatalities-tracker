@@ -386,19 +386,19 @@ export function TrafficMap() {
           .on("click", select);
       } else {
         line.on("click", select);
-        const mid = segment.coordinates[Math.floor(segment.coordinates.length / 2)];
-        leaflet
-          .circleMarker([mid[1], mid[0]], {
-            renderer: renderer as never,
-            radius: 6,
-            color: "#ffffff",
-            weight: 2,
-            fillColor: color,
-            fillOpacity: 0.96,
-          })
-          .addTo(group as never)
-          .on("click", select);
       }
+      const mid = segment.coordinates[Math.floor(segment.coordinates.length / 2)];
+      leaflet
+        .circleMarker([mid[1], mid[0]], {
+          renderer: renderer as never,
+          radius: dense ? 5 : 6,
+          color: "#ffffff",
+          weight: dense ? 1 : 2,
+          fillColor: color,
+          fillOpacity: 0.96,
+        })
+        .addTo(group as never)
+        .on("click", select);
     }
   }, [classified.segments, ready]);
 
