@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { AppShell } from "@/components/app-shell";
@@ -84,6 +85,7 @@ function RootDocument() {
             }}
           />
         </AuthProvider>
+        <Analytics />
         <Scripts />
       </body>
     </html>
