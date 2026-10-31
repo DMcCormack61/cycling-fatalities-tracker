@@ -10,6 +10,10 @@
  * Refresh:
  *   node scripts/fetch-news-crashes.mjs
  *   node scripts/load-crash-imports.mjs
+ *
+ * A dated window reads Google News RSS only and merges new rows into the
+ * file. Published and rejected rows stay. Pending rows already on disk stay.
+ *   node scripts/fetch-news-crashes.mjs --after 2026-10-25 --before 2026-11-01
  */
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -80,8 +84,25 @@ function gdeltDate(value) {
   return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
-async function googleNews(query) {
-  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} when:365d`)}&hl=en-US&gl=US&ceid=US:en`;
+function argValue(flag) {
+  const index = process.argv.indexOf(flag);
+  if (index === -1) return null;
+  const value = process.argv[index + 1];
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${flag} needs a YYYY-MM-DD value`);
+  }
+  return value;
+}
+
+function dayBefore(iso) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
+async function googleNews(query, { after, before } = {}) {
+  const clause = after && before ? `after:${dayBefore(after)} before:${before}` : "when:365d";
+  const url = `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} ${clause}`)}&hl=en-US&gl=US&ceid=US:en`;
   const xml = await getText(url);
   const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
   return items.map((item) => {
@@ -125,29 +146,42 @@ function readJson(path, fallback) {
 }
 
 async function main() {
+  const after = argValue("--after");
+  const before = argValue("--before");
+  const windowed = Boolean(after && before);
+  if (Boolean(after) !== Boolean(before)) {
+    throw new Error("Pass both --after and --before, or neither.");
+  }
   const fetched = [];
   for (const query of QUERIES) {
-    try {
-      const rows = await gdelt(query);
-      console.log(`[news] gdelt ${query}: ${rows.length}`);
-      fetched.push(...rows);
-    } catch (err) {
-      console.error(`[news] gdelt failed for ${query}: ${err.message}`);
+    if (!windowed) {
+      try {
+        const rows = await gdelt(query);
+        console.log(`[news] gdelt ${query}: ${rows.length}`);
+        fetched.push(...rows);
+      } catch (err) {
+        console.error(`[news] gdelt failed for ${query}: ${err.message}`);
+      }
     }
     try {
-      const rows = await googleNews(query);
+      const rows = await googleNews(query, { after, before });
       console.log(`[news] google news ${query}: ${rows.length}`);
       fetched.push(...rows);
     } catch (err) {
       console.error(`[news] google news failed for ${query}: ${err.message}`);
     }
   }
+  if (windowed) console.log(`[news] google news window ${after} through the day before ${before}`);
 
   const candidates = [];
   const seenUrl = new Set();
   for (const item of fetched) {
     if (!item.url || seenUrl.has(item.url)) continue;
     seenUrl.add(item.url);
+    if (windowed) {
+      const publishedOn = item.publishedOn;
+      if (!publishedOn || publishedOn < after || publishedOn >= before) continue;
+    }
     const extracted = extractCandidate(item);
     if (!extracted) continue;
     candidates.push({ ...extracted, id: articleId(item.url) });
@@ -161,11 +195,18 @@ async function main() {
   );
   const pending = [];
   const seenId = new Set(locked.keys());
+  if (windowed) {
+    for (const row of existing) {
+      if (row.reviewStatus !== "pending" || seenId.has(row.id)) continue;
+      seenId.add(row.id);
+      pending.push(row);
+    }
+  }
   for (const row of candidates.sort((a, b) => b.occurredOn.localeCompare(a.occurredOn))) {
     if (seenId.has(row.id)) continue;
     seenId.add(row.id);
     pending.push(row);
-    if (pending.length >= PENDING_CAP) break;
+    if (!windowed && pending.length >= PENDING_CAP) break;
   }
   const rows = [...locked.values(), ...pending].sort((a, b) =>
     b.occurredOn.localeCompare(a.occurredOn) || a.id.localeCompare(b.id),

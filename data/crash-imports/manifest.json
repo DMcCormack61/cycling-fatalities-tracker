@@ -52,9 +52,9 @@
   },
   "news": {
     "file": "data/crash-imports/news.json",
-    "rows": 9,
-    "pending": 9,
-    "published": 0,
+    "rows": 42,
+    "pending": 13,
+    "published": 29,
     "rejected": 0,
     "verified": false,
     "cap": 250,
@@ -65,7 +65,7 @@
       "\"bicycle crash\" injured",
       "\"cyclist injured\""
     ],
-    "note": "Headline extraction only. Pending rows stay out of desk totals until promote-news-crash.mjs.",
+    "note": "Headline extraction, plus article checks for the Oct. 25-31, 2026 Google News window. Pending rows stay out of desk totals until promote-news-crash.mjs.",
     "refresh": "node scripts/fetch-news-crashes.mjs && node scripts/load-crash-imports.mjs"
   }
 }
