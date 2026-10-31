@@ -22,8 +22,8 @@ function Desk() {
         <p className="text-[0.6875rem] uppercase tracking-[0.2em] text-subtle">
           United States
         </p>
-        <h1 className="max-w-3xl font-display text-3xl leading-tight tracking-tight text-fg sm:text-4xl">
-          Bicycle-Automotive Collisions
+        <h1 className="max-w-4xl font-display text-3xl leading-tight tracking-tight text-fg sm:text-4xl">
+          Bicycle-Automotive Collisions Across the USA
         </h1>
         <p className="max-w-2xl text-base text-muted">
           Cyclist fatalities from NHTSA FARS, Pennsylvania bicycle injuries and deaths from PennDOT,
@@ -35,13 +35,17 @@ function Desk() {
         </p>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi label="Crashes filed" value={formatCompact(totals.crashes)} />
-        <Kpi label="Killed" value={formatCompact(totals.fatalities)} />
+        <Kpi
+          label={killedSinceLabel(totals.startYear)}
+          value={formatCompact(totals.fatalities)}
+        />
         <Kpi label="Injured" value={formatCompact(totals.injured)} />
-        <Kpi label="States" value={formatCompact(totals.states)} />
-        <Kpi label="Last 12 months" value={formatCompact(totals.last12Months)} />
-        <Kpi label="Collisions" value={formatCompact(totals.killed + totals.seriousInjury)} />
+        <Kpi
+          label={`This year (${totals.calendarYear})`}
+          value={formatCompact(totals.thisYear)}
+        />
       </section>
 
       <CrashAtlas points={data.mapPoints} />
@@ -128,11 +132,18 @@ function Desk() {
   );
 }
 
+/** Header for the killed total. The card value is the count. */
+function killedSinceLabel(startYear: number | null): string {
+  return startYear == null ? "Killed" : `Killed since ${startYear}`;
+}
+
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-surface px-3 py-4 shadow-[var(--shadow-border)] sm:px-4">
-      <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-subtle">{label}</p>
-      <p className="mt-1 font-display text-2xl tabular-nums tracking-tight text-fg sm:text-3xl">
+    <div className="flex h-full flex-col rounded-xl bg-surface px-3 py-4 shadow-[var(--shadow-border)] sm:px-4">
+      <p className="text-[0.6875rem] uppercase leading-snug tracking-[0.12em] text-subtle">
+        {label}
+      </p>
+      <p className="mt-auto pt-1 font-display text-2xl tabular-nums tracking-tight text-fg sm:text-3xl">
         {value}
       </p>
     </div>

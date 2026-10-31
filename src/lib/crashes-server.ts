@@ -125,10 +125,12 @@ export type DashboardData = {
     crashes: number;
     fatalities: number;
     injured: number;
-    states: number;
-    last12Months: number;
-    killed: number;
-    seriousInjury: number;
+    /** Verified crashes with occurred_on from Jan 1 of calendarYear through today. */
+    thisYear: number;
+    /** Year of current_date, paired with thisYear so the label and the count match. */
+    calendarYear: number;
+    /** Earliest verified crash year. Null only when the desk has no verified rows. */
+    startYear: number | null;
     curated: number;
     fars: number;
     penndot: number;
@@ -142,6 +144,12 @@ export type DashboardData = {
   byState: StateStat[];
 };
 
+function finiteYear(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const year = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(year) ? year : null;
+}
+
 export const getDashboard = createServerFn({ method: "GET" }).handler(
   async (): Promise<DashboardData> => {
     await ensureCuratedSeed();
@@ -151,10 +159,9 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
       crashes: number;
       fatalities: number;
       injured: number;
-      states: number;
-      last12: number;
-      killed: number;
-      serious: number;
+      thisYear: number;
+      calendarYear: number;
+      startYear: number | null;
       curated: number;
       fars: number;
       penndot: number;
@@ -164,10 +171,13 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         count(*) filter (where verified)::int as crashes,
         coalesce(sum(fatalities) filter (where verified), 0)::int as fatalities,
         coalesce(sum(injured) filter (where verified), 0)::int as injured,
-        count(distinct state) filter (where verified)::int as states,
-        count(*) filter (where verified and occurred_on >= (current_date - interval '12 months'))::int as last12,
-        count(*) filter (where verified and outcome = 'killed')::int as killed,
-        count(*) filter (where verified and outcome = 'serious_injury')::int as serious,
+        count(*) filter (
+          where verified
+            and occurred_on >= make_date(extract(year from current_date)::int, 1, 1)
+            and occurred_on <= current_date
+        )::int as "thisYear",
+        extract(year from current_date)::int as "calendarYear",
+        extract(year from min(occurred_on) filter (where verified))::int as "startYear",
         count(*) filter (where verified and ingest_source = 'curated')::int as curated,
         count(*) filter (where verified and ingest_source = 'fars')::int as fars,
         count(*) filter (where verified and ingest_source = 'penndot')::int as penndot,
@@ -259,10 +269,9 @@ export const getDashboard = createServerFn({ method: "GET" }).handler(
         crashes: totals?.crashes ?? 0,
         fatalities: totals?.fatalities ?? 0,
         injured: totals?.injured ?? 0,
-        states: totals?.states ?? 0,
-        last12Months: totals?.last12 ?? 0,
-        killed: totals?.killed ?? 0,
-        seriousInjury: totals?.serious ?? 0,
+        thisYear: totals?.thisYear ?? 0,
+        calendarYear: finiteYear(totals?.calendarYear) ?? new Date().getUTCFullYear(),
+        startYear: finiteYear(totals?.startYear),
         curated: totals?.curated ?? 0,
         fars: totals?.fars ?? 0,
         penndot: totals?.penndot ?? 0,
