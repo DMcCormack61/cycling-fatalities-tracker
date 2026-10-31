@@ -19,7 +19,17 @@ test("bundled FARS and PennDOT files are far larger than the curated seed", () =
   assert.ok(penndot.filter((row) => row.context.includes("Lancaster traffic region")).length > 800);
   assert.ok(penndot.every((row) => row.victimName == null && row.stateCode === "PA"));
   assert.ok(news.length > 0);
-  assert.ok(news.every((row) => row.verified === false && row.reviewStatus === "pending" && row.ingestSource === "news"));
+  assert.ok(news.every((row) => row.ingestSource === "news"));
+  assert.ok(news.some((row) => row.reviewStatus === "pending" && row.verified === false));
+  assert.ok(news.some((row) => row.reviewStatus === "published" && row.verified === true));
+  assert.ok(
+    news.every(
+      (row) =>
+        (row.reviewStatus === "pending" && row.verified === false) ||
+        (row.reviewStatus === "published" && row.verified === true) ||
+        (row.reviewStatus === "rejected" && row.verified === false),
+    ),
+  );
   const prepared = prepareImports(root);
   assert.ok(prepared.fars.length > 3000);
   assert.ok(prepared.penndot.length > 4000);

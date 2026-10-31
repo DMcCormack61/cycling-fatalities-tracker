@@ -11,7 +11,6 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import pg from "pg";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FILE = join(ROOT, "data", "crash-imports", "news.json");
@@ -39,9 +38,12 @@ if (reject) {
 } else {
   row.reviewStatus = "published";
   row.verified = true;
-  row.context = row.victimName
-    ? "Promoted from the news queue. The name was taken from the headline."
-    : "Promoted from the news queue. The headline did not name the victim.";
+  const boilerplate = !row.context || row.context.startsWith("Unreviewed news candidate");
+  if (boilerplate) {
+    row.context = row.victimName
+      ? "Promoted from the news queue. The name was taken from the report."
+      : "Promoted from the news queue. The report did not name the victim.";
+  }
 }
 writeFileSync(FILE, JSON.stringify(rows));
 console.log(`[promote] ${id} -> ${row.reviewStatus} in ${FILE}`);
@@ -51,6 +53,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(0);
 }
 
+const { default: pg } = await import("pg");
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
 try {
   await pool.query(
