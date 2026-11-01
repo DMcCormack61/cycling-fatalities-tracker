@@ -36,3 +36,40 @@ test("bundled FARS and PennDOT files are far larger than the curated seed", () =
   assert.ok(prepared.suppressed.farsCurated >= 1);
   assert.ok(prepared.suppressed.penndotFars >= 1);
 });
+
+test("Nov 1 2026 desk sweep publishes confirmed crashes and queues the undated one", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const kirkpatrick = news.find((row) => row.id === "news-cf4b8958fe213d2e");
+  assert.equal(kirkpatrick.victimName, "Shannon Kirkpatrick");
+  assert.equal(kirkpatrick.reviewStatus, "published");
+  assert.equal(kirkpatrick.verified, true);
+  assert.equal(kirkpatrick.occurredOn, "2026-10-30");
+
+  const mays = news.find((row) => row.id === "news-b8212b4f13a77c95");
+  assert.equal(mays.victimName, 'William "Frank" Mays');
+  assert.equal(mays.reviewStatus, "published");
+  assert.equal(mays.verified, true);
+  assert.equal(mays.fatalities, 1);
+  assert.equal(mays.occurredOn, "2026-10-18");
+
+  const phoenix = news.find((row) => row.id === "news-b32b49bfb7d77f23");
+  assert.equal(phoenix.reviewStatus, "published");
+  assert.equal(phoenix.verified, true);
+  assert.equal(phoenix.injured, 2);
+  assert.equal(phoenix.victimName, null);
+  assert.equal(phoenix.occurredOn, "2026-10-30");
+
+  const harris = news.find((row) => row.id === "news-c05fccba3dfff9a7");
+  assert.equal(harris.victimName, "Corey Harris");
+  assert.equal(harris.reviewStatus, "pending");
+  assert.equal(harris.verified, false);
+  assert.equal(harris.datePrecision, "published");
+  assert.match(harris.context, /exact crash date is not stated/i);
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const id of [kirkpatrick.id, mays.id, phoenix.id, harris.id]) {
+    assert.ok(prepared.news.some((row) => row.id === id));
+  }
+});
