@@ -149,3 +149,62 @@ test("Nov 2 2026 desk sweep publishes confirmed crashes and queues the rest", ()
     assert.ok(prepared.news.some((row) => row.id === id), id);
   }
 });
+
+test("Nov 3 2026 desk sweep publishes confirmed crashes and skips the rest", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const sacramento = byId.get("news-9386fb2d7730367f");
+  assert.equal(sacramento.reviewStatus, "published");
+  assert.equal(sacramento.verified, true);
+  assert.equal(sacramento.outcome, "killed");
+  assert.equal(sacramento.fatalities, 1);
+  assert.equal(sacramento.victimName, null);
+  assert.equal(sacramento.occurredOn, "2026-11-02");
+  assert.equal(sacramento.vehicleType, "pickup");
+  assert.equal(sacramento.roadwayType, "Stockton Boulevard");
+  assert.equal(sacramento.city, "Sacramento");
+  assert.match(sacramento.summary, /Victory Avenue/);
+
+  const charleston = byId.get("news-f86a54867ec1e096");
+  assert.equal(charleston.reviewStatus, "published");
+  assert.equal(charleston.verified, true);
+  assert.equal(charleston.fatalities, 1);
+  assert.equal(charleston.victimName, null);
+  assert.equal(charleston.occurredOn, "2026-11-02");
+  assert.equal(charleston.city, "South Charleston");
+  assert.equal(charleston.stateCode, "WV");
+  assert.match(charleston.summary, /4100 block of MacCorkle Avenue/);
+  assert.match(charleston.context, /400 block/);
+
+  const hubbard = byId.get("news-751af9ac5112d31b");
+  assert.equal(hubbard.victimName, "Andre J. Hubbard");
+  assert.equal(hubbard.reviewStatus, "published");
+  assert.equal(hubbard.verified, true);
+  assert.equal(hubbard.outcome, "serious_injury");
+  assert.equal(hubbard.injured, 1);
+  assert.equal(hubbard.fatalities, 0);
+  assert.equal(hubbard.occurredOn, "2026-11-01");
+  assert.equal(hubbard.helmet, "no");
+  assert.equal(hubbard.vehicleType, "SUV");
+  assert.match(hubbard.summary, /Volkswagen Atlas/);
+
+  const rahman = byId.get("news-35c1bda03d710964");
+  assert.equal(rahman.reviewStatus, "published");
+  assert.equal(rahman.victimName, "Maksudur Rahman");
+  assert.equal(
+    news.filter((row) => row.city === "Voorhees" && row.roadwayType === "Route 73").length,
+    1,
+  );
+  assert.equal(
+    news.some((row) => /wilson way/i.test(`${row.summary} ${row.locationName}`)),
+    false,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const id of [sacramento.id, charleston.id, hubbard.id, rahman.id]) {
+    assert.ok(prepared.news.some((row) => row.id === id), id);
+  }
+});
