@@ -170,7 +170,7 @@ test("Nov 3 2026 desk sweep publishes confirmed crashes and skips the rest", () 
   assert.equal(charleston.reviewStatus, "published");
   assert.equal(charleston.verified, true);
   assert.equal(charleston.fatalities, 1);
-  assert.equal(charleston.victimName, null);
+  assert.equal(charleston.victimName, "Christopher D. Skeens");
   assert.equal(charleston.occurredOn, "2026-11-02");
   assert.equal(charleston.city, "South Charleston");
   assert.equal(charleston.stateCode, "WV");
