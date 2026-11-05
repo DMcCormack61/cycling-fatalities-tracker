@@ -208,3 +208,133 @@ test("Nov 3 2026 desk sweep publishes confirmed crashes and skips the rest", () 
     assert.ok(prepared.news.some((row) => row.id === id), id);
   }
 });
+
+test("Nov 5 2026 desk sweep publishes the day's confirmed crashes", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const grandPrairie = byId.get("news-cf9b6ba38c284b14");
+  assert.equal(grandPrairie.reviewStatus, "published");
+  assert.equal(grandPrairie.verified, true);
+  assert.equal(grandPrairie.outcome, "killed");
+  assert.equal(grandPrairie.fatalities, 1);
+  assert.equal(grandPrairie.victimName, null);
+  assert.equal(grandPrairie.occurredOn, "2026-11-03");
+  assert.equal(grandPrairie.city, "Grand Prairie");
+  assert.equal(grandPrairie.stateCode, "TX");
+  assert.equal(grandPrairie.driverStatus, "at_scene");
+  assert.match(grandPrairie.summary, /Bill Irwin Street/);
+  assert.equal(grandPrairie.latitude, 32.74921);
+
+  const eriksen = byId.get("news-75ffef76ffa73801");
+  assert.equal(eriksen.victimName, "Frances Max Eriksen");
+  assert.equal(eriksen.reviewStatus, "published");
+  assert.equal(eriksen.verified, true);
+  assert.equal(eriksen.outcome, "killed");
+  assert.equal(eriksen.occurredOn, "2026-11-03");
+  assert.equal(eriksen.city, "Maricopa");
+  assert.equal(eriksen.driverStatus, "unknown");
+  assert.match(eriksen.context, /hit-and-run/);
+
+  const gag = byId.get("news-a281fd8236da1def");
+  assert.equal(gag.victimName, "Louisa Gag");
+  assert.equal(gag.reviewStatus, "published");
+  assert.equal(gag.verified, true);
+  assert.equal(gag.fatalities, 1);
+  assert.equal(gag.occurredOn, "2026-07-09");
+  assert.equal(gag.city, "Boston");
+  assert.equal(gag.vehicleType, "truck");
+  assert.match(gag.summary, /Parker Street/);
+
+  const withrow = byId.get("news-659f8c3a194b65a2");
+  assert.equal(withrow.victimName, 'Catherine "Cate" Withrow');
+  assert.equal(withrow.reviewStatus, "published");
+  assert.equal(withrow.verified, true);
+  assert.equal(withrow.occurredOn, "2026-07-06");
+  assert.equal(withrow.city, "Fort Collins");
+  assert.equal(withrow.vehicleType, "truck");
+  assert.match(withrow.summary, /Baldivia/);
+
+  const redmond = byId.get("news-a38b60511646dff8");
+  assert.equal(redmond.reviewStatus, "published");
+  assert.equal(redmond.outcome, "serious_injury");
+  assert.equal(redmond.severity, "high");
+  assert.equal(redmond.crashType, "hit-and-run");
+  assert.equal(redmond.driverStatus, "fled");
+  assert.equal(redmond.city, "Redmond");
+  assert.equal(redmond.occurredOn, "2026-11-04");
+
+  const flint = byId.get("news-3b12442cc0ff2179");
+  assert.equal(flint.reviewStatus, "published");
+  assert.equal(flint.severity, "critical");
+  assert.equal(flint.vehicleType, "SUV");
+  assert.equal(flint.driverStatus, "at_scene");
+  assert.equal(flint.city, "Flint");
+  assert.match(flint.summary, /Jeep Grand Cherokee/);
+
+  const scottsdale = byId.get("news-6e18f5aa62844956");
+  assert.equal(scottsdale.reviewStatus, "published");
+  assert.equal(scottsdale.city, "Scottsdale");
+  assert.equal(scottsdale.severity, "critical");
+  assert.equal(scottsdale.crashType, "intersection");
+  assert.match(scottsdale.summary, /Lone Mountain/);
+
+  const tempe = byId.get("news-29989c6379fa87a4");
+  assert.equal(tempe.reviewStatus, "published");
+  assert.equal(tempe.city, "Tempe");
+  assert.equal(tempe.severity, "critical");
+  assert.equal(tempe.driverStatus, "at_scene");
+  assert.match(tempe.summary, /McKellips/);
+
+  const damariscotta = byId.get("news-0e1a7189e18a7694");
+  assert.equal(damariscotta.reviewStatus, "published");
+  assert.equal(damariscotta.city, "Damariscotta");
+  assert.equal(damariscotta.crashType, "hit-and-run");
+  assert.equal(damariscotta.driverStatus, "fled");
+  assert.equal(damariscotta.severity, "high");
+  assert.equal(damariscotta.victimAgeBand, "60\u201369");
+
+  const martinville = byId.get("news-119b9830653954a1");
+  assert.equal(martinville.reviewStatus, "published");
+  assert.equal(martinville.city, "St. Martinville");
+  assert.equal(martinville.severity, "critical");
+  assert.equal(martinville.vehicleType, "truck");
+  assert.match(martinville.summary, /Port Street/);
+
+  const beekmantown = byId.get("news-4f345677a867d766");
+  assert.equal(beekmantown.reviewStatus, "published");
+  assert.equal(beekmantown.city, "Beekmantown");
+  assert.equal(beekmantown.severity, "moderate");
+  assert.equal(beekmantown.latitude, null);
+  assert.equal(beekmantown.longitude, null);
+  assert.match(beekmantown.context, /no pin/i);
+  assert.match(beekmantown.summary, /Spellman Road/);
+
+  const added = [
+    grandPrairie,
+    eriksen,
+    gag,
+    withrow,
+    redmond,
+    flint,
+    scottsdale,
+    tempe,
+    damariscotta,
+    martinville,
+    beekmantown,
+  ];
+  assert.equal(added.filter((row) => row.outcome === "killed").length, 4);
+  assert.equal(added.filter((row) => row.outcome === "serious_injury").length, 7);
+  assert.ok(added.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(added.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of added) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
