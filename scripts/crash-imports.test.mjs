@@ -378,18 +378,24 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.match(elkGrove.summary, /Matina Drive/);
   assert.equal(elkGrove.latitude, 38.38205);
 
-  const muhlenberg = byId.get("news-622b83864458e7b9");
-  assert.equal(muhlenberg.reviewStatus, "published");
-  assert.equal(muhlenberg.verified, true);
-  assert.equal(muhlenberg.outcome, "serious_injury");
-  assert.equal(muhlenberg.severity, "high");
-  assert.equal(muhlenberg.crashType, "hit-and-run");
-  assert.equal(muhlenberg.driverStatus, "fled");
-  assert.equal(muhlenberg.city, "Muhlenberg Township");
-  assert.equal(muhlenberg.occurredOn, "2026-11-05");
-  assert.match(muhlenberg.summary, /Wilson Street/);
-  assert.match(muhlenberg.context, /Single-source/);
-  assert.equal(muhlenberg.latitude, 40.37615);
+  const batavia = byId.get("news-0338287e98d92ce6");
+  assert.equal(batavia.reviewStatus, "published");
+  assert.equal(batavia.verified, true);
+  assert.equal(batavia.outcome, "serious_injury");
+  assert.equal(batavia.severity, "high");
+  assert.equal(batavia.crashType, "hit-and-run");
+  assert.equal(batavia.driverStatus, "fled");
+  assert.equal(batavia.vehicleType, "car");
+  assert.equal(batavia.victimName, null);
+  assert.equal(batavia.city, "Batavia");
+  assert.equal(batavia.stateCode, "NY");
+  assert.equal(batavia.occurredOn, "2026-11-05");
+  assert.equal(batavia.latitude, null);
+  assert.equal(batavia.longitude, null);
+  assert.match(batavia.summary, /North Spruce Street/);
+  assert.match(batavia.summary, /Altima/);
+  assert.match(batavia.context, /no pin/i);
+  assert.equal(byId.get("news-622b83864458e7b9"), undefined);
 
   const albertLea = byId.get("news-f9b8b135d5c43c40");
   assert.equal(albertLea.reviewStatus, "published");
@@ -418,6 +424,35 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.match(battleCreek.summary, /Cherrywood Lane/);
   assert.equal(battleCreek.latitude, 42.28955);
 
+  const hyannis = byId.get("news-29a0f5274e17b2eb");
+  assert.equal(hyannis.reviewStatus, "published");
+  assert.equal(hyannis.verified, true);
+  assert.equal(hyannis.outcome, "serious_injury");
+  assert.equal(hyannis.severity, "high");
+  assert.equal(hyannis.crashType, "intersection");
+  assert.equal(hyannis.vehicleType, "car");
+  assert.equal(hyannis.city, "Hyannis");
+  assert.equal(hyannis.stateCode, "MA");
+  assert.equal(hyannis.occurredOn, "2026-11-02");
+  assert.match(hyannis.summary, /Rosary Road/);
+  assert.equal(hyannis.latitude, 41.67099);
+
+  const laredo = byId.get("news-107355a29a91fdf0");
+  assert.equal(laredo.reviewStatus, "published");
+  assert.equal(laredo.verified, true);
+  assert.equal(laredo.outcome, "serious_injury");
+  assert.equal(laredo.severity, "high");
+  assert.equal(laredo.crashType, "hit-and-run");
+  assert.equal(laredo.driverStatus, "charged");
+  assert.equal(laredo.victimName, null);
+  assert.equal(laredo.victimAgeBand, "20\u201329");
+  assert.equal(laredo.city, "Laredo");
+  assert.equal(laredo.stateCode, "TX");
+  assert.equal(laredo.occurredOn, "2026-11-01");
+  assert.match(laredo.summary, /Mauro Sandoval/);
+  assert.match(laredo.summary, /Zapata/);
+  assert.equal(laredo.latitude, 27.49582);
+
   const wilson = byId.get("news-260856213f6225ac");
   assert.equal(wilson.victimName, "Autumn D. Wilson");
   assert.equal(wilson.reviewStatus, "published");
@@ -444,9 +479,9 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.match(tempe.summary, /later died/);
   assert.match(tempe.summary, /McKellips/);
 
-  const added = [columbus, elkGrove, muhlenberg, albertLea, battleCreek, wilson];
+  const added = [columbus, elkGrove, batavia, albertLea, battleCreek, hyannis, laredo, wilson];
   assert.equal(added.filter((row) => row.outcome === "killed").length, 2);
-  assert.equal(added.filter((row) => row.outcome === "serious_injury").length, 4);
+  assert.equal(added.filter((row) => row.outcome === "serious_injury").length, 6);
   assert.ok(added.every((row) => row.verified === true && row.reviewStatus === "published"));
   assert.ok(added.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
 

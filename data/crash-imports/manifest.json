@@ -52,9 +52,9 @@
   },
   "news": {
     "file": "data/crash-imports/news.json",
-    "rows": 83,
+    "rows": 85,
     "pending": 18,
-    "published": 65,
+    "published": 67,
     "rejected": 0,
     "verified": false,
     "cap": 250,
