@@ -352,7 +352,7 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.equal(columbus.outcome, "killed");
   assert.equal(columbus.fatalities, 1);
   assert.equal(columbus.injured, 0);
-  assert.equal(columbus.victimName, null);
+  assert.equal(columbus.victimName, "Dion Watts");
   assert.equal(columbus.occurredOn, "2026-11-05");
   assert.equal(columbus.city, "Columbus");
   assert.equal(columbus.stateCode, "OH");
@@ -362,7 +362,6 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.match(columbus.summary, /Kenny Road/);
   assert.match(columbus.summary, /7:37/);
   assert.equal(columbus.latitude, 40.00665);
-  assert.equal(news[0].id, columbus.id);
 
   const elkGrove = byId.get("news-6ee8392311b134eb");
   assert.equal(elkGrove.reviewStatus, "published");
@@ -415,7 +414,7 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.equal(battleCreek.outcome, "killed");
   assert.equal(battleCreek.fatalities, 1);
   assert.equal(battleCreek.injured, 0);
-  assert.equal(battleCreek.victimName, null);
+  assert.equal(battleCreek.victimName, "David Webster");
   assert.equal(battleCreek.victimAgeBand, "80\u201389");
   assert.equal(battleCreek.driverStatus, "at_scene");
   assert.equal(battleCreek.city, "Battle Creek");
@@ -489,6 +488,147 @@ test("Nov 6 2026 desk sweep publishes confirmed crashes and records the Tempe de
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...added, tempe]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 7 2026 desk sweep names two riders and publishes the day's confirmed crashes", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const columbus = byId.get("news-d325ff8dd5acd45b");
+  assert.equal(columbus.victimName, "Dion Watts");
+  assert.equal(columbus.victimAgeBand, "20\u201329");
+  assert.equal(columbus.vehicleType, "SUV");
+  assert.equal(columbus.reviewStatus, "published");
+  assert.equal(columbus.verified, true);
+  assert.equal(columbus.outcome, "killed");
+  assert.equal(columbus.occurredOn, "2026-11-05");
+  assert.equal(columbus.latitude, 40.00665);
+  assert.equal(columbus.longitude, -83.03423);
+  assert.match(columbus.summary, /Porsche Cayenne/);
+  assert.match(columbus.summary, /Preston Avenue/);
+  assert.match(columbus.context, /Lane Avenue/);
+
+  const battleCreek = byId.get("news-cecadb8c2c548739");
+  assert.equal(battleCreek.victimName, "David Webster");
+  assert.equal(battleCreek.victimAgeBand, "80\u201389");
+  assert.equal(battleCreek.reviewStatus, "published");
+  assert.equal(battleCreek.verified, true);
+  assert.equal(battleCreek.outcome, "killed");
+  assert.equal(battleCreek.occurredOn, "2026-11-03");
+  assert.equal(battleCreek.latitude, 42.28955);
+  assert.match(battleCreek.summary, /Woodland Church/);
+  assert.match(battleCreek.summary, /Cherrywood Lane/);
+
+  const vicksburg = byId.get("news-97facf22283c4d4c");
+  assert.equal(vicksburg.reviewStatus, "published");
+  assert.equal(vicksburg.verified, true);
+  assert.equal(vicksburg.outcome, "serious_injury");
+  assert.equal(vicksburg.severity, "moderate");
+  assert.equal(vicksburg.crashType, "hit-and-run");
+  assert.equal(vicksburg.driverStatus, "charged");
+  assert.equal(vicksburg.vehicleType, "pickup");
+  assert.equal(vicksburg.victimName, null);
+  assert.equal(vicksburg.city, "Vicksburg");
+  assert.equal(vicksburg.stateCode, "MS");
+  assert.equal(vicksburg.occurredOn, "2026-11-06");
+  assert.match(vicksburg.summary, /Nissan Titan/);
+  assert.match(vicksburg.summary, /leg pain/);
+  assert.equal(vicksburg.latitude, 32.3237);
+  assert.equal(news[0].id, vicksburg.id);
+
+  const honolulu = byId.get("news-bd920cc9ff932acc");
+  assert.equal(honolulu.reviewStatus, "published");
+  assert.equal(honolulu.verified, true);
+  assert.equal(honolulu.outcome, "serious_injury");
+  assert.equal(honolulu.severity, "critical");
+  assert.equal(honolulu.vehicleType, "bus");
+  assert.equal(honolulu.helmet, "no");
+  assert.equal(honolulu.victimName, null);
+  assert.equal(honolulu.victimAgeBand, "10\u201319");
+  assert.equal(honolulu.driverStatus, "at_scene");
+  assert.equal(honolulu.city, "Honolulu");
+  assert.equal(honolulu.stateCode, "HI");
+  assert.equal(honolulu.occurredOn, "2026-11-06");
+  assert.match(honolulu.summary, /Laumaka Street/);
+  assert.equal(honolulu.latitude, 21.33088);
+
+  const chicago = byId.get("news-9e7e606a74a96a0a");
+  assert.equal(chicago.reviewStatus, "pending");
+  assert.equal(chicago.verified, false);
+  assert.equal(chicago.outcome, "killed");
+  assert.equal(chicago.fatalities, 1);
+  assert.equal(chicago.victimName, null);
+  assert.equal(chicago.victimAgeBand, "60\u201369");
+  assert.equal(chicago.vehicleType, "SUV");
+  assert.equal(chicago.city, "Chicago");
+  assert.equal(chicago.occurredOn, "2026-11-06");
+  assert.match(chicago.context, /not confirmed as a bicycle/i);
+  assert.match(chicago.summary, /stand-up electric scooter/);
+  assert.equal(chicago.latitude, 41.99037);
+  assert.equal(
+    news.some((row) => /armour square/i.test(row.summary) && row.reviewStatus === "published"),
+    false,
+  );
+
+  const sanDiego = byId.get("news-a5e70d1181e2e4b4");
+  assert.equal(sanDiego.reviewStatus, "published");
+  assert.equal(sanDiego.verified, true);
+  assert.equal(sanDiego.outcome, "serious_injury");
+  assert.equal(sanDiego.severity, "high");
+  assert.equal(sanDiego.vehicleType, "truck");
+  assert.equal(sanDiego.victimName, null);
+  assert.equal(sanDiego.victimAgeBand, "50\u201359");
+  assert.equal(sanDiego.city, "San Diego");
+  assert.equal(sanDiego.stateCode, "CA");
+  assert.equal(sanDiego.occurredOn, "2026-11-05");
+  assert.match(sanDiego.summary, /Ford F-650/);
+  assert.match(sanDiego.summary, /6000 Miramar Road/);
+  assert.equal(sanDiego.latitude, 32.87727);
+
+  const elkton = byId.get("news-dae4bd53a1be9af5");
+  assert.equal(elkton.reviewStatus, "published");
+  assert.equal(elkton.verified, true);
+  assert.equal(elkton.outcome, "serious_injury");
+  assert.equal(elkton.severity, "high");
+  assert.equal(elkton.crashType, "intersection");
+  assert.equal(elkton.victimName, null);
+  assert.equal(elkton.city, "Elkton");
+  assert.equal(elkton.stateCode, "MD");
+  assert.equal(elkton.occurredOn, "2026-11-05");
+  assert.match(elkton.summary, /Howard Street/);
+  assert.equal(elkton.latitude, 39.60567);
+
+  const middlebury = byId.get("news-97a08d3c19e3d787");
+  assert.equal(middlebury.reviewStatus, "published");
+  assert.equal(middlebury.verified, true);
+  assert.equal(middlebury.outcome, "serious_injury");
+  assert.equal(middlebury.severity, "low");
+  assert.equal(middlebury.crashType, "hit-and-run");
+  assert.equal(middlebury.driverStatus, "fled");
+  assert.equal(middlebury.vehicleType, "SUV");
+  assert.equal(middlebury.victimName, null);
+  assert.equal(middlebury.city, "Middlebury");
+  assert.equal(middlebury.stateCode, "VT");
+  assert.equal(middlebury.occurredOn, "2026-10-26");
+  assert.match(middlebury.summary, /Subaru Crosstrek/);
+  assert.match(middlebury.summary, /minor injuries/);
+  assert.equal(middlebury.latitude, 44.01302);
+
+  const published = [vicksburg, honolulu, sanDiego, elkton, middlebury];
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 5);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(chicago.reviewStatus, "pending");
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, chicago, columbus, battleCreek]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
