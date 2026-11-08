@@ -1,13 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { CrashAtlas } from "@/components/crash-atlas";
-import { CrashLocaleMap } from "@/components/crash-locale-map";
+import { CrashLocaleMap, GoogleMapsLink } from "@/components/crash-locale-map";
 import { SeverityBadge } from "@/components/severity-badge";
 import { Badge } from "@/components/ui/badge";
 import { getCrash } from "@/lib/crashes-server";
 import type { MapPoint } from "@/lib/crashes-server";
 import { driverStatusLabel, ingestLabel, outcomeLabel, typeLabel } from "@/lib/crashes";
 import { formatCompact, formatDate } from "@/lib/format";
+import { googleMapsSearchUrl } from "@/lib/google-maps-url.mjs";
 
 export const Route = createFileRoute("/crashes/$id")({
   loader: async ({ params }) => {
@@ -42,6 +43,13 @@ function CrashDetail() {
           },
         ]
       : [];
+  const mapsHref = googleMapsSearchUrl({
+    latitude: crash.latitude,
+    longitude: crash.longitude,
+    locationName: crash.locationName,
+    city: crash.city,
+    state: crash.state,
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -122,7 +130,10 @@ function CrashDetail() {
               place={crash.mapPlace}
               heading={placeHeading(crash.city, crash.state)}
               markerLabel={crash.locationName}
+              mapsHref={mapsHref}
             />
+          ) : mapsHref ? (
+            <GoogleMapsLink href={mapsHref} />
           ) : null}
         </article>
 
