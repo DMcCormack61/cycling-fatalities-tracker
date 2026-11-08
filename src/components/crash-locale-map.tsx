@@ -13,6 +13,7 @@ type Props = {
   place: CrashMapPlace;
   heading: string;
   markerLabel: string;
+  mapsHref?: string | null;
 };
 
 type LeafletNs = typeof import("leaflet");
@@ -63,7 +64,7 @@ function paintLanes(leaflet: LeafletNs, group: LaneGroup, lanes: BikeLane[]) {
   }
 }
 
-export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
+export function CrashLocaleMap({ place, heading, markerLabel, mapsHref = null }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const leafletRef = useRef<LeafletNs | null>(null);
   const laneGroupRef = useRef<LaneGroup | null>(null);
@@ -265,6 +266,24 @@ export function CrashLocaleMap({ place, heading, markerLabel }: Props) {
           </p>
         ) : null}
       </div>
+      {mapsHref ? (
+        <div className="px-4 pb-4 pt-3 sm:px-5">
+          <GoogleMapsLink href={mapsHref} />
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+export function GoogleMapsLink({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener"
+      className="text-sm text-accent underline-offset-4 hover:underline"
+    >
+      Open in Google Maps
+    </a>
   );
 }
