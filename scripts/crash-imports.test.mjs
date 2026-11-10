@@ -662,7 +662,7 @@ test("Nov 8 2026 desk sweep publishes confirmed crashes and queues the Tuttle Av
   assert.match(holly.summary, /Capital Cycling Club/);
   assert.equal(holly.latitude, 35.66183);
   assert.equal(holly.longitude, -78.77253);
-  assert.equal(news[0].id, holly.id);
+  assert.ok(news[0].occurredOn >= holly.occurredOn);
 
   const gibsonton = byId.get("news-29e3e38ab745a5a8");
   assert.equal(gibsonton.reviewStatus, "published");
@@ -750,6 +750,128 @@ test("Nov 8 2026 desk sweep publishes confirmed crashes and queues the Tuttle Av
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...published, tuttle]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 10 2026 desk sweep publishes confirmed crashes and queues the Chicago pedicab", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const katy = byId.get("news-617218ca3f9e390e");
+  assert.equal(katy.reviewStatus, "published");
+  assert.equal(katy.verified, true);
+  assert.equal(katy.outcome, "killed");
+  assert.equal(katy.severity, "critical");
+  assert.equal(katy.fatalities, 1);
+  assert.equal(katy.injured, 0);
+  assert.equal(katy.victimName, "Chinwe Keisha Egbo");
+  assert.equal(katy.victimAgeBand, "20\u201329");
+  assert.equal(katy.crashType, "hit-and-run");
+  assert.equal(katy.driverStatus, "charged");
+  assert.equal(katy.vehicleType, "SUV");
+  assert.equal(katy.city, "Katy");
+  assert.equal(katy.stateCode, "TX");
+  assert.equal(katy.occurredOn, "2026-11-08");
+  assert.equal(katy.lighting, "dark");
+  assert.match(katy.summary, /Pitts Road/);
+  assert.match(katy.summary, /Trianna Denise Walker/);
+  assert.match(katy.summary, /failure to stop and render aid/);
+  assert.match(katy.context, /KHOU reported the same Pitts Road crash/);
+  assert.equal(katy.latitude, 29.83111);
+  assert.equal(katy.longitude, -95.84019);
+  assert.equal(katy.sourceName, "FOX 26 Houston");
+  assert.equal(news[0].id, katy.id);
+
+  const gulf = byId.get("news-71ea297ef82a1825");
+  assert.equal(gulf.reviewStatus, "published");
+  assert.equal(gulf.verified, true);
+  assert.equal(gulf.outcome, "killed");
+  assert.equal(gulf.fatalities, 1);
+  assert.equal(gulf.injured, 0);
+  assert.equal(gulf.victimName, null);
+  assert.equal(gulf.crashType, "intersection");
+  assert.equal(gulf.driverStatus, "at_scene");
+  assert.equal(gulf.vehicleType, "car");
+  assert.equal(gulf.city, "Gulf Breeze");
+  assert.equal(gulf.stateCode, "FL");
+  assert.equal(gulf.occurredOn, "2026-11-08");
+  assert.equal(gulf.lighting, "dark");
+  assert.match(gulf.summary, /Portside Drive/);
+  assert.match(gulf.summary, /19-year-old/);
+  assert.equal(gulf.latitude, 30.3904);
+  assert.equal(gulf.longitude, -87.06243);
+
+  const greensboro = byId.get("news-ed7ee6886cee2b8e");
+  assert.equal(greensboro.reviewStatus, "published");
+  assert.equal(greensboro.verified, true);
+  assert.equal(greensboro.outcome, "killed");
+  assert.equal(greensboro.fatalities, 1);
+  assert.equal(greensboro.victimName, "Napoleon Ellerbe");
+  assert.equal(greensboro.victimAgeBand, "30\u201339");
+  assert.equal(greensboro.crashType, "other");
+  assert.equal(greensboro.driverStatus, "at_scene");
+  assert.equal(greensboro.vehicleType, "SUV");
+  assert.equal(greensboro.city, "Greensboro");
+  assert.equal(greensboro.stateCode, "NC");
+  assert.equal(greensboro.occurredOn, "2026-11-07");
+  assert.match(greensboro.summary, /Reedy Fork Parkway/);
+  assert.match(greensboro.summary, /Cadillac SRX/);
+  assert.match(greensboro.context, /FOX8 WGHP/);
+  assert.equal(greensboro.latitude, 36.17567);
+  assert.equal(greensboro.longitude, -79.71214);
+
+  const missaukee = byId.get("news-a411145719115faf");
+  assert.equal(missaukee.reviewStatus, "published");
+  assert.equal(missaukee.verified, true);
+  assert.equal(missaukee.outcome, "killed");
+  assert.equal(missaukee.fatalities, 1);
+  assert.equal(missaukee.victimName, null);
+  assert.equal(missaukee.victimAgeBand, "30\u201339");
+  assert.equal(missaukee.crashType, "hit-from-behind");
+  assert.equal(missaukee.vehicleType, null);
+  assert.equal(missaukee.city, "Clam Union Township");
+  assert.equal(missaukee.stateCode, "MI");
+  assert.equal(missaukee.occurredOn, "2026-11-07");
+  assert.equal(missaukee.lighting, "dark");
+  assert.match(missaukee.summary, /Prosper Road/);
+  assert.match(missaukee.summary, /eastbound/);
+  assert.match(missaukee.context, /A motor vehicle was involved/);
+  assert.equal(missaukee.latitude, 44.24302);
+  assert.equal(missaukee.longitude, -85.0435);
+
+  const chicago = byId.get("news-8c3425353a202637");
+  assert.equal(chicago.reviewStatus, "pending");
+  assert.equal(chicago.verified, false);
+  assert.equal(chicago.outcome, "serious_injury");
+  assert.equal(chicago.city, "Chicago");
+  assert.equal(chicago.stateCode, "IL");
+  assert.equal(chicago.occurredOn, "2026-11-08");
+  assert.equal(chicago.vehicleType, "car");
+  assert.match(chicago.context, /Not confirmed as a bicycle/);
+  assert.match(chicago.summary, /pedicab/);
+  assert.equal(chicago.latitude, 41.87322);
+  assert.equal(chicago.longitude, -87.6206);
+
+  const published = [katy, gulf, greensboro, missaukee];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 4);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 0);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(chicago.reviewStatus, "pending");
+  assert.equal(
+    news.filter((row) => row.victimName === "Chinwe Keisha Egbo" || /4100 block of Pitts Road/.test(row.summary))
+      .length,
+    1,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, chicago]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
