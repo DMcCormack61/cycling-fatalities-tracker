@@ -784,7 +784,7 @@ test("Nov 10 2026 desk sweep publishes confirmed crashes and queues the Chicago 
   assert.equal(katy.latitude, 29.83111);
   assert.equal(katy.longitude, -95.84019);
   assert.equal(katy.sourceName, "FOX 26 Houston");
-  assert.equal(news[0].id, katy.id);
+  assert.ok(news[0].occurredOn >= katy.occurredOn);
 
   const gulf = byId.get("news-71ea297ef82a1825");
   assert.equal(gulf.reviewStatus, "published");
@@ -872,6 +872,154 @@ test("Nov 10 2026 desk sweep publishes confirmed crashes and queues the Chicago 
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...published, chicago]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 11 2026 desk sweep publishes confirmed crashes and queues the Armour dispatch", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const phenix = byId.get("news-834703803975d7d3");
+  assert.equal(phenix.reviewStatus, "published");
+  assert.equal(phenix.verified, true);
+  assert.equal(phenix.outcome, "killed");
+  assert.equal(phenix.severity, "critical");
+  assert.equal(phenix.fatalities, 1);
+  assert.equal(phenix.injured, 0);
+  assert.equal(phenix.victimName, null);
+  assert.equal(phenix.victimAgeBand, "30\u201339");
+  assert.equal(phenix.crashType, "intersection");
+  assert.equal(phenix.driverStatus, "unknown");
+  assert.equal(phenix.vehicleType, null);
+  assert.equal(phenix.city, "Phenix City");
+  assert.equal(phenix.stateCode, "AL");
+  assert.equal(phenix.occurredOn, "2026-11-10");
+  assert.equal(phenix.lighting, "dark");
+  assert.match(phenix.summary, /Sandfort Road/);
+  assert.match(phenix.summary, /10:10/);
+  assert.match(phenix.summary, /Arthur Sumbry Jr/);
+  assert.match(phenix.context, /16th Avenue North/);
+  assert.equal(phenix.latitude, 32.45625);
+  assert.equal(phenix.longitude, -85.01512);
+  assert.equal(news[0].id, phenix.id);
+  assert.equal(
+    news.filter((row) => row.victimName === "Bartlo Pascual-Bartlome").length,
+    0,
+  );
+
+  const leesburg = byId.get("news-f048de12728a81c1");
+  assert.equal(leesburg.reviewStatus, "published");
+  assert.equal(leesburg.verified, true);
+  assert.equal(leesburg.outcome, "killed");
+  assert.equal(leesburg.fatalities, 1);
+  assert.equal(leesburg.injured, 0);
+  assert.equal(leesburg.victimName, null);
+  assert.equal(leesburg.victimAgeBand, "30\u201339");
+  assert.equal(leesburg.crashType, "intersection");
+  assert.equal(leesburg.driverStatus, "charged");
+  assert.equal(leesburg.vehicleType, "pickup");
+  assert.equal(leesburg.city, "Leesburg");
+  assert.equal(leesburg.stateCode, "VA");
+  assert.equal(leesburg.occurredOn, "2026-11-10");
+  assert.equal(leesburg.lighting, "dark");
+  assert.match(leesburg.summary, /Clayton P\. Templeton/);
+  assert.match(leesburg.summary, /Prosperity Avenue/);
+  assert.equal(leesburg.latitude, 39.10639);
+  assert.equal(leesburg.longitude, -77.54789);
+
+  const kansasCity = byId.get("news-537e205d87430371");
+  assert.equal(kansasCity.reviewStatus, "published");
+  assert.equal(kansasCity.verified, true);
+  assert.equal(kansasCity.outcome, "serious_injury");
+  assert.equal(kansasCity.severity, "critical");
+  assert.equal(kansasCity.helmet, "no");
+  assert.equal(kansasCity.vehicleType, "SUV");
+  assert.equal(kansasCity.driverStatus, "at_scene");
+  assert.equal(kansasCity.victimName, null);
+  assert.equal(kansasCity.city, "Kansas City");
+  assert.equal(kansasCity.stateCode, "MO");
+  assert.equal(kansasCity.occurredOn, "2026-11-10");
+  assert.equal(kansasCity.lighting, "daylight");
+  assert.match(kansasCity.summary, /Kia Sorento/);
+  assert.match(kansasCity.summary, /87th Street/);
+  assert.match(kansasCity.context, /place point/);
+  assert.equal(kansasCity.latitude, 39.10011);
+  assert.equal(kansasCity.longitude, -94.57814);
+
+  const armour = byId.get("news-65a0e23b12925d0a");
+  assert.equal(armour.reviewStatus, "pending");
+  assert.equal(armour.verified, false);
+  assert.equal(armour.outcome, "serious_injury");
+  assert.equal(armour.city, "Kansas City");
+  assert.equal(armour.stateCode, "MO");
+  assert.equal(armour.occurredOn, "2026-11-10");
+  assert.equal(armour.vehicleType, "car");
+  assert.match(
+    armour.context,
+    /No police statement or news article has confirmed that the person was riding a bicycle/,
+  );
+  assert.match(armour.summary, /Gillham Road/);
+  assert.equal(armour.latitude, 39.06362);
+  assert.equal(armour.longitude, -94.581);
+
+  const greenville = byId.get("news-9eedd744576a73d3");
+  assert.equal(greenville.reviewStatus, "published");
+  assert.equal(greenville.verified, true);
+  assert.equal(greenville.outcome, "serious_injury");
+  assert.equal(greenville.severity, "high");
+  assert.equal(greenville.victimName, null);
+  assert.equal(greenville.victimAgeBand, "10\u201319");
+  assert.equal(greenville.vehicleType, "truck");
+  assert.equal(greenville.city, "Greenville");
+  assert.equal(greenville.stateCode, "NC");
+  assert.equal(greenville.occurredOn, "2026-11-09");
+  assert.equal(greenville.lighting, "daylight");
+  assert.match(greenville.summary, /J\.H\. Rose High School/);
+  assert.match(greenville.summary, /Arlington Boulevard/);
+  assert.match(greenville.context, /already filed/);
+  assert.equal(greenville.latitude, 35.59365);
+  assert.equal(greenville.longitude, -77.38611);
+
+  const clarksville = byId.get("news-5be474f57d250136");
+  assert.equal(clarksville.reviewStatus, "published");
+  assert.equal(clarksville.verified, true);
+  assert.equal(clarksville.outcome, "serious_injury");
+  assert.equal(clarksville.severity, "high");
+  assert.equal(clarksville.victimName, null);
+  assert.equal(clarksville.victimAgeBand, "60\u201369");
+  assert.equal(clarksville.vehicleType, "car");
+  assert.equal(clarksville.city, "Clarksville");
+  assert.equal(clarksville.stateCode, "TN");
+  assert.equal(clarksville.occurredOn, "2026-10-09");
+  assert.equal(clarksville.lighting, "dark");
+  assert.match(clarksville.summary, /2760 Trenton Road/);
+  assert.match(clarksville.context, /early Wednesday/);
+  assert.equal(clarksville.latitude, 36.58934);
+  assert.equal(clarksville.longitude, -87.31333);
+
+  const katy = byId.get("news-617218ca3f9e390e");
+  assert.equal(katy.victimName, "Chinwe Keisha Egbo");
+  assert.equal(
+    news.filter((row) => row.victimName === "Chinwe Keisha Egbo" || /4100 block of Pitts Road/.test(row.summary))
+      .length,
+    1,
+  );
+
+  const published = [phenix, leesburg, kansasCity, greenville, clarksville];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 2);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 3);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(armour.reviewStatus, "pending");
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, armour]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
