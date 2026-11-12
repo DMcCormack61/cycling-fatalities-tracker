@@ -905,7 +905,6 @@ test("Nov 11 2026 desk sweep publishes confirmed crashes and queues the Armour d
   assert.match(phenix.context, /16th Avenue North/);
   assert.equal(phenix.latitude, 32.45625);
   assert.equal(phenix.longitude, -85.01512);
-  assert.equal(news[0].id, phenix.id);
   assert.equal(
     news.filter((row) => row.victimName === "Bartlo Pascual-Bartlome").length,
     0,
@@ -1020,6 +1019,153 @@ test("Nov 11 2026 desk sweep publishes confirmed crashes and queues the Armour d
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...published, armour]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 12 2026 desk sweep publishes confirmed crashes and queues the rest", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const taylorsville = byId.get("news-a82be10c1098a0e0");
+  assert.equal(taylorsville.reviewStatus, "published");
+  assert.equal(taylorsville.verified, true);
+  assert.equal(taylorsville.outcome, "serious_injury");
+  assert.equal(taylorsville.severity, "critical");
+  assert.equal(taylorsville.fatalities, 0);
+  assert.equal(taylorsville.injured, 1);
+  assert.equal(taylorsville.victimName, null);
+  assert.equal(taylorsville.victimAgeBand, "10\u201319");
+  assert.equal(taylorsville.crashType, "intersection");
+  assert.equal(taylorsville.driverStatus, "at_scene");
+  assert.equal(taylorsville.vehicleType, "SUV");
+  assert.equal(taylorsville.city, "Taylorsville");
+  assert.equal(taylorsville.stateCode, "UT");
+  assert.equal(taylorsville.occurredOn, "2026-11-11");
+  assert.equal(taylorsville.lighting, "daylight");
+  assert.match(taylorsville.summary, /4200 South/);
+  assert.match(taylorsville.summary, /Primary Children's Hospital/);
+  assert.match(taylorsville.context, /West Valley City/);
+  assert.equal(taylorsville.latitude, 40.67973);
+  assert.equal(taylorsville.longitude, -111.93825);
+  assert.equal(news[0].id, taylorsville.id);
+
+  const orion = byId.get("news-28ffd3360b1a22a3");
+  assert.equal(orion.reviewStatus, "pending");
+  assert.equal(orion.verified, false);
+  assert.equal(orion.outcome, "serious_injury");
+  assert.equal(orion.severity, "critical");
+  assert.equal(orion.city, "Orion Township");
+  assert.equal(orion.stateCode, "MI");
+  assert.equal(orion.occurredOn, "2026-11-11");
+  assert.equal(orion.vehicleType, null);
+  assert.match(orion.context, /No motor vehicle was involved/);
+  assert.match(orion.summary, /sewer pipe/);
+  assert.match(orion.summary, /Axford Street/);
+  assert.equal(orion.latitude, 42.78951);
+  assert.equal(orion.longitude, -83.24582);
+
+  const pittsfield = byId.get("news-fbad610c64661f59");
+  assert.equal(pittsfield.reviewStatus, "published");
+  assert.equal(pittsfield.verified, true);
+  assert.equal(pittsfield.outcome, "killed");
+  assert.equal(pittsfield.severity, "critical");
+  assert.equal(pittsfield.fatalities, 1);
+  assert.equal(pittsfield.injured, 0);
+  assert.equal(pittsfield.victimName, "Jeffrey Cookson");
+  assert.equal(pittsfield.victimAgeBand, "50\u201359");
+  assert.equal(pittsfield.crashType, "hit-and-run");
+  assert.equal(pittsfield.driverStatus, "fled");
+  assert.equal(pittsfield.vehicleType, "car");
+  assert.equal(pittsfield.city, "Pittsfield");
+  assert.equal(pittsfield.stateCode, "ME");
+  assert.equal(pittsfield.occurredOn, "2026-11-10");
+  assert.equal(pittsfield.lighting, "dusk");
+  assert.match(pittsfield.summary, /Peltoma Avenue/);
+  assert.match(pittsfield.summary, /4:30/);
+  assert.match(pittsfield.summary, /Jetta/);
+  assert.match(pittsfield.context, /496 Peltoma Avenue/);
+  assert.equal(pittsfield.latitude, 44.77238);
+  assert.equal(pittsfield.longitude, -69.36434);
+  assert.equal(pittsfield.sourceName, "WMTW");
+
+  const marlboro = byId.get("news-0d9de49fbde0faf2");
+  assert.equal(marlboro.reviewStatus, "pending");
+  assert.equal(marlboro.verified, false);
+  assert.equal(marlboro.outcome, "serious_injury");
+  assert.equal(marlboro.city, "Marlboro Township");
+  assert.equal(marlboro.stateCode, "OH");
+  assert.equal(marlboro.occurredOn, "2026-11-10");
+  assert.equal(marlboro.vehicleType, "SUV");
+  assert.equal(marlboro.helmet, "worn");
+  assert.match(marlboro.context, /Not confirmed as a bicycle/);
+  assert.match(marlboro.summary, /Smith Kramer Street/);
+  assert.equal(marlboro.latitude, 40.93891);
+  assert.equal(marlboro.longitude, -81.29146);
+
+  const bolton = byId.get("news-5771f1a16a0467e4");
+  assert.equal(bolton.reviewStatus, "pending");
+  assert.equal(bolton.verified, false);
+  assert.equal(bolton.outcome, "serious_injury");
+  assert.equal(bolton.city, "Bolton");
+  assert.equal(bolton.stateCode, "MS");
+  assert.equal(bolton.occurredOn, "2026-11-07");
+  assert.equal(bolton.vehicleType, null);
+  assert.equal(bolton.latitude, null);
+  assert.equal(bolton.longitude, null);
+  assert.match(bolton.context, /injury is not stated/i);
+  assert.match(bolton.summary, /Champion Hill Road/);
+
+  const plano = byId.get("news-8db0ee7e95ed31fa");
+  assert.equal(plano.reviewStatus, "published");
+  assert.equal(plano.verified, true);
+  assert.equal(plano.outcome, "serious_injury");
+  assert.equal(plano.severity, "high");
+  assert.equal(plano.crashType, "hit-and-run");
+  assert.equal(plano.driverStatus, "fled");
+  assert.equal(plano.victimName, null);
+  assert.equal(plano.city, "Plano");
+  assert.equal(plano.stateCode, "TX");
+  assert.equal(plano.occurredOn, "2026-10-06");
+  assert.equal(plano.lighting, "dark");
+  assert.match(plano.summary, /East Park Boulevard/);
+  assert.match(plano.summary, /N Avenue/);
+  assert.match(plano.summary, /Oct\. 6/);
+  assert.equal(plano.latitude, 33.03132);
+  assert.equal(plano.longitude, -96.69492);
+
+  const elkGrove = byId.get("news-6ee8392311b134eb");
+  assert.equal(elkGrove.outcome, "serious_injury");
+  assert.equal(elkGrove.fatalities, 0);
+  assert.equal(elkGrove.injured, 1);
+  assert.equal(elkGrove.reviewStatus, "published");
+  assert.equal(elkGrove.city, "Elk Grove");
+  assert.equal(elkGrove.occurredOn, "2026-11-05");
+
+  const published = [taylorsville, pittsfield, plano];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 1);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 2);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(orion.reviewStatus, "pending");
+  assert.equal(marlboro.reviewStatus, "pending");
+  assert.equal(bolton.reviewStatus, "pending");
+  assert.equal(
+    news.filter((row) => row.victimName === "Jeffrey Cookson" || /Peltoma Avenue/.test(row.summary)).length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "Bolton" && row.occurredOn === "2026-11-07").length,
+    1,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, orion, marlboro, bolton]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
