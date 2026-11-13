@@ -52,9 +52,9 @@
   },
   "news": {
     "file": "data/crash-imports/news.json",
-    "rows": 113,
-    "pending": 25,
-    "published": 88,
+    "rows": 120,
+    "pending": 28,
+    "published": 92,
     "rejected": 0,
     "verified": false,
     "cap": 250,
@@ -65,7 +65,7 @@
       "\"bicycle crash\" injured",
       "\"cyclist injured\""
     ],
-    "note": "Headline extraction, plus article checks for the Oct. 25-31, 2026 Google News window, and Nov. 1, Nov. 2, Nov. 3, Nov. 4, Nov. 5, Nov. 6, Nov. 7, Nov. 8, Nov. 10, Nov. 11, and Nov. 12, 2026 desk sweeps. The Nov. 12 sweep covers reports from Nov. 10 through Nov. 12, plus the Oct. 6 Plano hit-and-run that NBC 5 reported on Nov. 11. The Elk Grove row stays a serious injury because no newsroom confirmed a later death. Pending rows stay out of desk totals until promote-news-crash.mjs.",
+    "note": "Headline extraction, plus article checks for the Oct. 25-31, 2026 Google News window, and Nov. 1, Nov. 2, Nov. 3, Nov. 4, Nov. 5, Nov. 6, Nov. 7, Nov. 8, Nov. 10, Nov. 11, Nov. 12, and Nov. 13, 2026 desk sweeps. The Nov. 13 sweep covers reports from Nov. 11 through Nov. 13. The Elk Grove row stays a serious injury because no newsroom confirmed a later death. The Orion Township row stays pending because no motor vehicle was involved; a later report named John Reilly. Pending rows stay out of desk totals until promote-news-crash.mjs.",
     "refresh": "node scripts/fetch-news-crashes.mjs && node scripts/load-crash-imports.mjs"
   }
 }

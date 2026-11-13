@@ -1051,7 +1051,7 @@ test("Nov 12 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.match(taylorsville.context, /West Valley City/);
   assert.equal(taylorsville.latitude, 40.67973);
   assert.equal(taylorsville.longitude, -111.93825);
-  assert.equal(news[0].id, taylorsville.id);
+  assert.ok(news[0].occurredOn >= taylorsville.occurredOn);
 
   const orion = byId.get("news-28ffd3360b1a22a3");
   assert.equal(orion.reviewStatus, "pending");
@@ -1166,6 +1166,166 @@ test("Nov 12 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...published, orion, marlboro, bolton]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 13 2026 desk sweep publishes confirmed crashes and queues the rest", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const miami = byId.get("news-4d007bdf5b89b7ef");
+  assert.equal(miami.reviewStatus, "published");
+  assert.equal(miami.verified, true);
+  assert.equal(miami.outcome, "killed");
+  assert.equal(miami.severity, "critical");
+  assert.equal(miami.fatalities, 1);
+  assert.equal(miami.injured, 0);
+  assert.equal(miami.victimName, null);
+  assert.equal(miami.crashType, "intersection");
+  assert.equal(miami.driverStatus, "at_scene");
+  assert.equal(miami.vehicleType, "car");
+  assert.equal(miami.city, "Miami Gardens");
+  assert.equal(miami.stateCode, "FL");
+  assert.equal(miami.occurredOn, "2026-11-12");
+  assert.equal(miami.lighting, "dark");
+  assert.match(miami.summary, /215th Street/);
+  assert.match(miami.summary, /San Simeon Way/);
+  assert.match(miami.summary, /5:46/);
+  assert.match(miami.context, /Miami Gardens/);
+  assert.equal(miami.latitude, 25.97315);
+  assert.equal(miami.longitude, -80.19445);
+  assert.equal(news[0].id, miami.id);
+
+  const dallas = byId.get("news-7ecd962c7303e87f");
+  assert.equal(dallas.reviewStatus, "published");
+  assert.equal(dallas.verified, true);
+  assert.equal(dallas.outcome, "killed");
+  assert.equal(dallas.fatalities, 1);
+  assert.equal(dallas.injured, 0);
+  assert.equal(dallas.victimName, null);
+  assert.equal(dallas.crashType, "intersection");
+  assert.equal(dallas.driverStatus, "at_scene");
+  assert.equal(dallas.vehicleType, "pickup");
+  assert.equal(dallas.city, "Dallas");
+  assert.equal(dallas.stateCode, "TX");
+  assert.equal(dallas.occurredOn, "2026-11-11");
+  assert.equal(dallas.lighting, "dark");
+  assert.match(dallas.summary, /Marsalis/);
+  assert.match(dallas.summary, /9:12/);
+  assert.equal(dallas.latitude, 32.75878);
+  assert.equal(dallas.longitude, -96.81566);
+  assert.equal(dallas.sourceName, "FOX 4");
+
+  const westPalm = byId.get("news-1a9196140f7ee720");
+  assert.equal(westPalm.reviewStatus, "published");
+  assert.equal(westPalm.verified, true);
+  assert.equal(westPalm.outcome, "serious_injury");
+  assert.equal(westPalm.severity, "critical");
+  assert.equal(westPalm.fatalities, 0);
+  assert.equal(westPalm.injured, 1);
+  assert.equal(westPalm.victimName, null);
+  assert.equal(westPalm.vehicleType, null);
+  assert.equal(westPalm.driverStatus, "at_scene");
+  assert.equal(westPalm.city, "West Palm Beach");
+  assert.equal(westPalm.stateCode, "FL");
+  assert.equal(westPalm.occurredOn, "2026-11-11");
+  assert.equal(westPalm.lighting, "dusk");
+  assert.match(westPalm.summary, /Madeira Court/);
+  assert.match(westPalm.summary, /St\. Mary's/);
+  assert.equal(westPalm.latitude, 26.7244);
+  assert.equal(westPalm.longitude, -80.05484);
+
+  const hutchinson = byId.get("news-3877274ba08b983b");
+  assert.equal(hutchinson.reviewStatus, "published");
+  assert.equal(hutchinson.verified, true);
+  assert.equal(hutchinson.outcome, "serious_injury");
+  assert.equal(hutchinson.severity, "critical");
+  assert.equal(hutchinson.victimName, "Mark Francis Pedretti");
+  assert.equal(hutchinson.victimAgeBand, "60\u201369");
+  assert.equal(hutchinson.vehicleType, "SUV");
+  assert.equal(hutchinson.helmet, "no");
+  assert.equal(hutchinson.city, "Hutchinson");
+  assert.equal(hutchinson.stateCode, "MN");
+  assert.equal(hutchinson.occurredOn, "2026-11-11");
+  assert.equal(hutchinson.lighting, "daylight");
+  assert.match(hutchinson.summary, /School Road/);
+  assert.equal(hutchinson.latitude, 44.89357);
+  assert.equal(hutchinson.longitude, -94.39526);
+
+  const fortRecovery = byId.get("news-6a375977f138185f");
+  assert.equal(fortRecovery.reviewStatus, "pending");
+  assert.equal(fortRecovery.verified, false);
+  assert.equal(fortRecovery.outcome, "killed");
+  assert.equal(fortRecovery.victimName, "Charles Binegar Jr.");
+  assert.equal(fortRecovery.city, "Fort Recovery");
+  assert.equal(fortRecovery.stateCode, "OH");
+  assert.equal(fortRecovery.occurredOn, "2026-11-11");
+  assert.equal(fortRecovery.vehicleType, null);
+  assert.match(fortRecovery.context, /No motor vehicle was involved/);
+  assert.match(fortRecovery.summary, /utility box/);
+  assert.equal(fortRecovery.latitude, 40.41324);
+  assert.equal(fortRecovery.longitude, -84.78141);
+
+  const redRock = byId.get("news-8fcf092059916991");
+  assert.equal(redRock.reviewStatus, "pending");
+  assert.equal(redRock.verified, false);
+  assert.equal(redRock.outcome, "serious_injury");
+  assert.equal(redRock.city, "Red Rock Canyon");
+  assert.equal(redRock.stateCode, "NV");
+  assert.equal(redRock.occurredOn, "2026-11-12");
+  assert.equal(redRock.vehicleType, null);
+  assert.equal(redRock.latitude, null);
+  assert.equal(redRock.longitude, null);
+  assert.match(redRock.context, /No motor vehicle was involved/);
+  assert.match(redRock.summary, /Scenic Loop/);
+
+  const hillcrest = byId.get("news-36f6d1827d0eb368");
+  assert.equal(hillcrest.reviewStatus, "pending");
+  assert.equal(hillcrest.verified, false);
+  assert.equal(hillcrest.city, "Hillcrest");
+  assert.equal(hillcrest.stateCode, "NY");
+  assert.equal(hillcrest.datePrecision, "published");
+  assert.match(hillcrest.context, /injury is not stated/i);
+  assert.match(hillcrest.summary, /West Eckerson Road/);
+  assert.equal(hillcrest.latitude, 41.12777);
+  assert.equal(hillcrest.longitude, -74.04112);
+
+  const orion = byId.get("news-28ffd3360b1a22a3");
+  assert.equal(orion.reviewStatus, "pending");
+  assert.equal(orion.victimName, "John Reilly");
+  assert.equal(orion.helmet, "worn");
+  assert.match(orion.context, /No motor vehicle was involved/);
+
+  const published = [miami, dallas, westPalm, hutchinson];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 2);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 2);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(fortRecovery.reviewStatus, "pending");
+  assert.equal(redRock.reviewStatus, "pending");
+  assert.equal(hillcrest.reviewStatus, "pending");
+  assert.equal(
+    news.filter((row) => row.victimName === "Mark Francis Pedretti" || /School Road in Hutchinson/.test(row.summary))
+      .length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "Dallas" && row.occurredOn === "2026-11-11").length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "West Palm Beach" && row.occurredOn === "2026-11-11").length,
+    1,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, fortRecovery, redRock, hillcrest]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
