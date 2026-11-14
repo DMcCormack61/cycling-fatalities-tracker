@@ -1198,7 +1198,6 @@ test("Nov 13 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.match(miami.context, /Miami Gardens/);
   assert.equal(miami.latitude, 25.97315);
   assert.equal(miami.longitude, -80.19445);
-  assert.equal(news[0].id, miami.id);
 
   const dallas = byId.get("news-7ecd962c7303e87f");
   assert.equal(dallas.reviewStatus, "published");
@@ -1326,6 +1325,133 @@ test("Nov 13 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...published, fortRecovery, redRock, hillcrest]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 14 2026 desk sweep publishes confirmed crashes and queues the rest", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const hanover = byId.get("news-5d15589fc988fc05");
+  assert.equal(hanover.reviewStatus, "published");
+  assert.equal(hanover.verified, true);
+  assert.equal(hanover.outcome, "serious_injury");
+  assert.equal(hanover.severity, "high");
+  assert.equal(hanover.fatalities, 0);
+  assert.equal(hanover.injured, 1);
+  assert.equal(hanover.victimName, null);
+  assert.equal(hanover.crashType, "hit-and-run");
+  assert.equal(hanover.driverStatus, "fled");
+  assert.equal(hanover.vehicleType, "SUV");
+  assert.equal(hanover.city, "Hanover Township");
+  assert.equal(hanover.stateCode, "PA");
+  assert.equal(hanover.occurredOn, "2026-11-13");
+  assert.equal(hanover.lighting, "dark");
+  assert.match(hanover.summary, /Oxford Street/);
+  assert.match(hanover.summary, /5:40/);
+  assert.match(hanover.summary, /Nissan Rogue/);
+  assert.match(hanover.context, /Luzerne|Lee Park/);
+  assert.equal(hanover.latitude, 41.23242);
+  assert.equal(hanover.longitude, -75.91771);
+  assert.equal(news[0].id, hanover.id);
+
+  const osage = byId.get("news-ca26afb67b64c393");
+  assert.equal(osage.reviewStatus, "published");
+  assert.equal(osage.verified, true);
+  assert.equal(osage.outcome, "serious_injury");
+  assert.equal(osage.severity, "high");
+  assert.equal(osage.fatalities, 0);
+  assert.equal(osage.injured, 1);
+  assert.equal(osage.victimName, null);
+  assert.equal(osage.victimAgeBand, "10\u201319");
+  assert.equal(osage.crashType, "other");
+  assert.equal(osage.driverStatus, "at_scene");
+  assert.equal(osage.vehicleType, "pickup");
+  assert.equal(osage.city, "Osage Township");
+  assert.equal(osage.stateCode, "MN");
+  assert.equal(osage.occurredOn, "2026-11-12");
+  assert.equal(osage.lighting, "daylight");
+  assert.match(osage.summary, /County Road 123/);
+  assert.match(osage.summary, /4:07/);
+  assert.match(osage.summary, /Kevin Beyer/);
+  assert.match(osage.context, /Highway 34/);
+  assert.equal(osage.latitude, 46.90582);
+  assert.equal(osage.longitude, -95.24755);
+  assert.equal(osage.sourceName, "Detroit Lakes Tribune");
+
+  const germantown = byId.get("news-5c4e1386ba1b6f79");
+  assert.equal(germantown.reviewStatus, "pending");
+  assert.equal(germantown.verified, false);
+  assert.equal(germantown.outcome, "killed");
+  assert.equal(germantown.severity, "critical");
+  assert.equal(germantown.fatalities, 1);
+  assert.equal(germantown.injured, 0);
+  assert.equal(germantown.victimName, "Dysheir M. McFadden");
+  assert.equal(germantown.victimAgeBand, "20\u201329");
+  assert.equal(germantown.crashType, "hit-and-run");
+  assert.equal(germantown.driverStatus, "fled");
+  assert.equal(germantown.vehicleType, "car");
+  assert.equal(germantown.city, "Philadelphia");
+  assert.equal(germantown.stateCode, "PA");
+  assert.equal(germantown.occurredOn, "2026-11-13");
+  assert.equal(germantown.lighting, "dark");
+  assert.match(germantown.summary, /Chelten Avenue/);
+  assert.match(germantown.summary, /1:02/);
+  assert.match(germantown.context, /Not confirmed as a bicycle/);
+  assert.match(germantown.context, /electric dirt bike/);
+  assert.equal(germantown.latitude, 40.03838);
+  assert.equal(germantown.longitude, -75.17213);
+
+  const northAdams = byId.get("news-729dacd58b702e44");
+  assert.equal(northAdams.reviewStatus, "pending");
+  assert.equal(northAdams.verified, false);
+  assert.equal(northAdams.outcome, "serious_injury");
+  assert.equal(northAdams.severity, "high");
+  assert.equal(northAdams.victimName, null);
+  assert.equal(northAdams.vehicleType, "car");
+  assert.equal(northAdams.city, "North Adams");
+  assert.equal(northAdams.stateCode, "MA");
+  assert.equal(northAdams.occurredOn, "2026-11-12");
+  assert.equal(northAdams.lighting, "dark");
+  assert.equal(northAdams.latitude, null);
+  assert.equal(northAdams.longitude, null);
+  assert.match(northAdams.context, /No moving motor vehicle was involved/);
+  assert.match(northAdams.summary, /parked car/);
+  assert.match(northAdams.summary, /State Street/);
+
+  const published = [hanover, osage];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 0);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 2);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(germantown.reviewStatus, "pending");
+  assert.equal(northAdams.reviewStatus, "pending");
+  assert.equal(
+    news.filter((row) => row.victimName === "Dysheir M. McFadden" || /East Chelten Avenue near Baynton/.test(row.summary))
+      .length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "Hanover Township" && row.occurredOn === "2026-11-13").length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "Osage Township" && row.occurredOn === "2026-11-12").length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => /220th/.test(row.summary) && row.city === "Torrance").length,
+    0,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, germantown, northAdams]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
