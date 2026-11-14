@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareImports } from "./load-crash-imports.mjs";
+import { googleMapsSearchUrl } from "../src/lib/google-maps-url.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -1384,8 +1385,8 @@ test("Nov 14 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.equal(osage.sourceName, "Detroit Lakes Tribune");
 
   const germantown = byId.get("news-5c4e1386ba1b6f79");
-  assert.equal(germantown.reviewStatus, "pending");
-  assert.equal(germantown.verified, false);
+  assert.equal(germantown.reviewStatus, "published");
+  assert.equal(germantown.verified, true);
   assert.equal(germantown.outcome, "killed");
   assert.equal(germantown.severity, "critical");
   assert.equal(germantown.fatalities, 1);
@@ -1395,16 +1396,30 @@ test("Nov 14 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.equal(germantown.crashType, "hit-and-run");
   assert.equal(germantown.driverStatus, "fled");
   assert.equal(germantown.vehicleType, "car");
+  assert.equal(germantown.locationName, "Germantown, Philadelphia, PA");
+  assert.equal(germantown.locationPrecision, "exact");
   assert.equal(germantown.city, "Philadelphia");
   assert.equal(germantown.stateCode, "PA");
   assert.equal(germantown.occurredOn, "2026-11-13");
   assert.equal(germantown.lighting, "dark");
   assert.match(germantown.summary, /Chelten Avenue/);
   assert.match(germantown.summary, /1:02/);
-  assert.match(germantown.context, /Not confirmed as a bicycle/);
-  assert.match(germantown.context, /electric dirt bike/);
+  assert.match(germantown.context, /Sources disagree on the device/);
+  assert.match(germantown.context, /police and NBC10 say electric dirt bike/);
+  assert.match(germantown.context, /6abc says illegal electric motorcycle/);
+  assert.match(germantown.context, /FOX 29 says e-bike/);
   assert.equal(germantown.latitude, 40.03838);
   assert.equal(germantown.longitude, -75.17213);
+  assert.equal(
+    googleMapsSearchUrl({
+      latitude: germantown.latitude,
+      longitude: germantown.longitude,
+      locationName: germantown.locationName,
+      city: germantown.city,
+      state: germantown.state,
+    }),
+    "https://www.google.com/maps/search/?api=1&query=40.03838,-75.17213",
+  );
 
   const northAdams = byId.get("news-729dacd58b702e44");
   assert.equal(northAdams.reviewStatus, "pending");
@@ -1423,12 +1438,11 @@ test("Nov 14 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.match(northAdams.summary, /parked car/);
   assert.match(northAdams.summary, /State Street/);
 
-  const published = [hanover, osage];
-  assert.equal(published.filter((row) => row.outcome === "killed").length, 0);
+  const published = [hanover, osage, germantown];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 1);
   assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 2);
   assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
   assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
-  assert.equal(germantown.reviewStatus, "pending");
   assert.equal(northAdams.reviewStatus, "pending");
   assert.equal(
     news.filter((row) => row.victimName === "Dysheir M. McFadden" || /East Chelten Avenue near Baynton/.test(row.summary))
