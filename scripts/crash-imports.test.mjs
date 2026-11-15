@@ -1472,3 +1472,107 @@ test("Nov 14 2026 desk sweep publishes confirmed crashes and queues the rest", (
     );
   }
 });
+
+test("Nov 15 2026 desk sweep publishes the Mobile hit-and-run and the New Brunswick e-bike crash", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const ensor = byId.get("news-79b876e0b806582a");
+  assert.equal(ensor.reviewStatus, "published");
+  assert.equal(ensor.verified, true);
+  assert.equal(ensor.ingestSource, "news");
+  assert.equal(ensor.outcome, "killed");
+  assert.equal(ensor.severity, "critical");
+  assert.equal(ensor.fatalities, 1);
+  assert.equal(ensor.injured, 0);
+  assert.equal(ensor.victimName, "John Ensor Jr.");
+  assert.equal(ensor.crashType, "hit-and-run");
+  assert.equal(ensor.driverStatus, "fled");
+  assert.equal(ensor.vehicleType, "GMC Yukon towing a boat");
+  assert.equal(ensor.city, "Mobile");
+  assert.equal(ensor.stateCode, "AL");
+  assert.equal(ensor.region, "South");
+  assert.equal(ensor.occurredOn, "2026-10-27");
+  assert.equal(ensor.datePrecision, "day");
+  assert.equal(ensor.lighting, "dark");
+  assert.equal(ensor.roadwayType, "Old Pascagoula Road");
+  assert.match(ensor.summary, /Horse Shoe Lane/);
+  assert.match(ensor.summary, /from behind/);
+  assert.match(ensor.summary, /west/);
+  assert.match(ensor.summary, /convenience store/);
+  assert.match(ensor.summary, /Oct\. 28/);
+  assert.match(ensor.summary, /impounded/);
+  assert.match(ensor.context, /first reported Nov\. 13 from a crash report/);
+  assert.match(ensor.context, /Lighting was dark/);
+  assert.match(ensor.context, /South Alabama News/);
+  assert.match(ensor.context, /no charges/);
+  assert.equal(ensor.latitude, 30.56099);
+  assert.equal(ensor.longitude, -88.22108);
+  assert.equal(ensor.locationPrecision, "town");
+  assert.equal(ensor.sourceName, "FOX10 News");
+  assert.equal(
+    ensor.sourceUrl,
+    "https://www.fox10tv.com/2026/11/13/alea-driver-hit-killed-bicyclist-old-pascagoula-road-then-left-scene/",
+  );
+  assert.equal(news[0].id, "news-5d15589fc988fc05");
+
+  const southerland = byId.get("news-aca788ed0c5a84c7");
+  assert.equal(southerland.reviewStatus, "published");
+  assert.equal(southerland.verified, true);
+  assert.equal(southerland.ingestSource, "news");
+  assert.equal(southerland.outcome, "killed");
+  assert.equal(southerland.severity, "critical");
+  assert.equal(southerland.fatalities, 1);
+  assert.equal(southerland.injured, 0);
+  assert.equal(southerland.victimName, "Gary Southerland");
+  assert.equal(southerland.victimAgeBand, "50\u201359");
+  assert.equal(southerland.crashType, "other");
+  assert.equal(southerland.driverStatus, "at_scene");
+  assert.equal(southerland.vehicleType, "car");
+  assert.equal(southerland.city, "New Brunswick");
+  assert.equal(southerland.stateCode, "NJ");
+  assert.equal(southerland.region, "Northeast");
+  assert.equal(southerland.occurredOn, "2026-11-08");
+  assert.equal(southerland.datePrecision, "day");
+  assert.equal(southerland.lighting, "dark");
+  assert.equal(southerland.roadwayType, "Jersey Avenue");
+  assert.match(southerland.summary, /200 block/);
+  assert.match(southerland.summary, /7:17/);
+  assert.match(southerland.summary, /electric bicycle/);
+  assert.match(southerland.summary, /stopped/);
+  assert.match(southerland.summary, /No charges/);
+  assert.match(southerland.context, /motor vehicle was involved/);
+  assert.equal(southerland.latitude, 40.48743);
+  assert.equal(southerland.longitude, -74.45873);
+  assert.equal(southerland.locationPrecision, "town");
+  assert.equal(southerland.sourceName, "NJ.com");
+  assert.equal(
+    southerland.sourceUrl,
+    "https://www.nj.com/middlesex/2026/11/a-man-died-after-falling-off-an-e-bike-and-being-hit-by-a-car-police-say.html",
+  );
+
+  const published = [ensor, southerland];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 2);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(
+    news.filter((row) => row.victimName === "John Ensor Jr." || /Old Pascagoula Road/.test(row.summary))
+      .length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.victimName === "Gary Southerland" || /200 block of Jersey Avenue/.test(row.summary))
+      .length,
+    1,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of published) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
