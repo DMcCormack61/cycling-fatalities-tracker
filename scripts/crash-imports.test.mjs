@@ -1358,7 +1358,7 @@ test("Nov 14 2026 desk sweep publishes confirmed crashes and queues the rest", (
   assert.match(hanover.context, /Luzerne|Lee Park/);
   assert.equal(hanover.latitude, 41.23242);
   assert.equal(hanover.longitude, -75.91771);
-  assert.equal(news[0].id, hanover.id);
+  assert.ok(news[0].occurredOn >= hanover.occurredOn);
 
   const osage = byId.get("news-ca26afb67b64c393");
   assert.equal(osage.reviewStatus, "published");
@@ -1514,7 +1514,7 @@ test("Nov 15 2026 desk sweep publishes the Mobile hit-and-run and the New Brunsw
     ensor.sourceUrl,
     "https://www.fox10tv.com/2026/11/13/alea-driver-hit-killed-bicyclist-old-pascagoula-road-then-left-scene/",
   );
-  assert.equal(news[0].id, "news-5d15589fc988fc05");
+  assert.ok(news[0].occurredOn >= "2026-11-13");
 
   const southerland = byId.get("news-aca788ed0c5a84c7");
   assert.equal(southerland.reviewStatus, "published");
@@ -1570,6 +1570,147 @@ test("Nov 15 2026 desk sweep publishes the Mobile hit-and-run and the New Brunsw
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of published) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 16 2026 desk sweep publishes the Chico death and the Commerce injury and queues Coral Springs", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const commerce = byId.get("news-bc32d33e7a38cd84");
+  assert.equal(commerce.reviewStatus, "published");
+  assert.equal(commerce.verified, true);
+  assert.equal(commerce.ingestSource, "news");
+  assert.equal(commerce.outcome, "serious_injury");
+  assert.equal(commerce.severity, "critical");
+  assert.equal(commerce.fatalities, 0);
+  assert.equal(commerce.injured, 1);
+  assert.equal(commerce.victimName, null);
+  assert.equal(commerce.crashType, "intersection");
+  assert.equal(commerce.driverStatus, "unknown");
+  assert.equal(commerce.vehicleType, null);
+  assert.equal(commerce.city, "Commerce");
+  assert.equal(commerce.stateCode, "CA");
+  assert.equal(commerce.region, "West");
+  assert.equal(commerce.occurredOn, "2026-11-15");
+  assert.equal(commerce.datePrecision, "day");
+  assert.equal(commerce.lighting, "daylight");
+  assert.equal(commerce.roadwayType, "Telegraph Road");
+  assert.match(commerce.summary, /12:20/);
+  assert.match(commerce.summary, /Atlantic Boulevard/);
+  assert.match(commerce.summary, /traumatic injuries/);
+  assert.match(commerce.summary, /Los Angeles General/);
+  assert.match(commerce.context, /not a surveyed crash coordinate/);
+  assert.equal(commerce.latitude, 34.00793);
+  assert.equal(commerce.longitude, -118.15667);
+  assert.equal(commerce.locationPrecision, "town");
+  assert.equal(commerce.sourceName, "MyNewsLA");
+  assert.equal(
+    commerce.sourceUrl,
+    "https://mynewsla.com/business/2026/11/15/bicyclist-suffers-traumatic-injuries-in-crash-with-vehicle-in-commerce/",
+  );
+  assert.equal(news[0].id, commerce.id);
+
+  const chico = byId.get("news-3dd23b784e9c2124");
+  assert.equal(chico.reviewStatus, "published");
+  assert.equal(chico.verified, true);
+  assert.equal(chico.ingestSource, "news");
+  assert.equal(chico.outcome, "killed");
+  assert.equal(chico.severity, "critical");
+  assert.equal(chico.fatalities, 1);
+  assert.equal(chico.injured, 0);
+  assert.equal(chico.victimName, null);
+  assert.equal(chico.crashType, "other");
+  assert.equal(chico.driverStatus, "unknown");
+  assert.equal(chico.vehicleType, "car");
+  assert.equal(chico.city, "Chico");
+  assert.equal(chico.stateCode, "CA");
+  assert.equal(chico.region, "West");
+  assert.equal(chico.occurredOn, "2026-11-14");
+  assert.equal(chico.datePrecision, "day");
+  assert.equal(chico.lighting, "dark");
+  assert.equal(chico.roadwayType, "Nord Avenue");
+  assert.match(chico.summary, /900 block of Nord Avenue/);
+  assert.match(chico.summary, /8:33/);
+  assert.match(chico.summary, /Major Accident Investigation Team/);
+  assert.match(chico.summary, /897-4974/);
+  assert.match(chico.context, /not a surveyed crash coordinate/);
+  assert.match(chico.context, /Pacific Attorney Group/);
+  assert.equal(chico.latitude, 39.73052);
+  assert.equal(chico.longitude, -121.85757);
+  assert.equal(chico.locationPrecision, "town");
+  assert.equal(chico.sourceName, "Action News Now");
+  assert.equal(
+    chico.sourceUrl,
+    "https://www.actionnewsnow.com/news/butte-county/chico-cyclist-dies-after-being-hit-on-nord-avenue/article_80460dc6-c5ea-4e01-9aec-f0627abb304b.html",
+  );
+
+  const coral = byId.get("news-d8890629e2b81dfa");
+  assert.equal(coral.reviewStatus, "pending");
+  assert.equal(coral.verified, false);
+  assert.equal(coral.ingestSource, "news");
+  assert.equal(coral.outcome, "serious_injury");
+  assert.equal(coral.severity, "moderate");
+  assert.equal(coral.fatalities, 0);
+  assert.equal(coral.injured, 1);
+  assert.equal(coral.victimName, null);
+  assert.equal(coral.crashType, "hit-and-run");
+  assert.equal(coral.driverStatus, "charged");
+  assert.equal(coral.vehicleType, "SUV");
+  assert.equal(coral.city, "Coral Springs");
+  assert.equal(coral.stateCode, "FL");
+  assert.equal(coral.region, "South");
+  assert.equal(coral.occurredOn, "2026-11-12");
+  assert.equal(coral.datePrecision, "approximate");
+  assert.equal(coral.lighting, null);
+  assert.equal(coral.roadwayType, "Northwest 39th Street");
+  assert.match(coral.summary, /Florencio Anton Quijada Brito/);
+  assert.match(coral.summary, /aggravated battery/);
+  assert.match(coral.summary, /sidewalk/);
+  assert.match(coral.summary, /Broward Health Coral Springs/);
+  assert.match(coral.context, /exact crash date is not stated/i);
+  assert.match(coral.context, /intentional assault/i);
+  assert.match(coral.context, /not a surveyed crash coordinate/);
+  assert.equal(coral.latitude, 26.27864);
+  assert.equal(coral.longitude, -80.2796);
+  assert.equal(coral.locationPrecision, "town");
+  assert.equal(coral.sourceName, "Coral Springs Talk");
+  assert.equal(
+    coral.sourceUrl,
+    "https://coralspringstalk.com/coral-springs-hit-and-run-e-bike-rider-neighborhood-chase-63202",
+  );
+
+  const published = [commerce, chico];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 1);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 1);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(coral.reviewStatus, "pending");
+  assert.equal(
+    news.filter((row) => row.city === "Chico" && row.occurredOn === "2026-11-14").length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "Commerce" && row.occurredOn === "2026-11-15").length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => /Florencio Anton Quijada Brito/.test(row.summary)).length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => /900 block of Nord Avenue/.test(row.summary)).length,
+    1,
+  );
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, coral]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
