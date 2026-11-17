@@ -1613,7 +1613,7 @@ test("Nov 16 2026 desk sweep publishes the Chico death and the Commerce injury a
     commerce.sourceUrl,
     "https://mynewsla.com/business/2026/11/15/bicyclist-suffers-traumatic-injuries-in-crash-with-vehicle-in-commerce/",
   );
-  assert.equal(news[0].id, commerce.id);
+  assert.ok(news.some((row) => row.id === commerce.id));
 
   const chico = byId.get("news-3dd23b784e9c2124");
   assert.equal(chico.reviewStatus, "published");
@@ -1711,6 +1711,202 @@ test("Nov 16 2026 desk sweep publishes the Chico death and the Commerce injury a
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...published, coral]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 17 2026 desk sweep publishes six injuries and queues the Riverside extrication", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const fallsChurch = byId.get("news-e38d3d84143dcb10");
+  assert.equal(fallsChurch.reviewStatus, "published");
+  assert.equal(fallsChurch.verified, true);
+  assert.equal(fallsChurch.ingestSource, "news");
+  assert.equal(fallsChurch.outcome, "serious_injury");
+  assert.equal(fallsChurch.severity, "critical");
+  assert.equal(fallsChurch.fatalities, 0);
+  assert.equal(fallsChurch.injured, 1);
+  assert.equal(fallsChurch.victimName, null);
+  assert.equal(fallsChurch.crashType, "intersection");
+  assert.equal(fallsChurch.driverStatus, "at_scene");
+  assert.equal(fallsChurch.vehicleType, "car");
+  assert.equal(fallsChurch.helmet, "no");
+  assert.equal(fallsChurch.city, "East Falls Church");
+  assert.equal(fallsChurch.stateCode, "VA");
+  assert.equal(fallsChurch.region, "South");
+  assert.equal(fallsChurch.occurredOn, "2026-11-16");
+  assert.equal(fallsChurch.datePrecision, "day");
+  assert.equal(fallsChurch.lighting, "dark");
+  assert.equal(fallsChurch.roadwayType, "Washington Boulevard");
+  assert.match(fallsChurch.summary, /8 p\.m\./);
+  assert.match(fallsChurch.summary, /Langston Boulevard/);
+  assert.match(fallsChurch.summary, /against the light/);
+  assert.match(fallsChurch.context, /not a surveyed crash coordinate/);
+  assert.equal(fallsChurch.latitude, 38.88824);
+  assert.equal(fallsChurch.longitude, -77.16105);
+  assert.equal(fallsChurch.locationPrecision, "town");
+  assert.equal(fallsChurch.sourceName, "ARLnow");
+  assert.equal(
+    fallsChurch.sourceUrl,
+    "https://www.arlnow.com/2026/11/16/breaking-bicyclist-struck-critically-injured-in-east-falls-church/",
+  );
+  assert.equal(news[0].id, fallsChurch.id);
+
+  const litchfield = byId.get("news-b18388dab5aaea06");
+  assert.equal(litchfield.reviewStatus, "published");
+  assert.equal(litchfield.verified, true);
+  assert.equal(litchfield.outcome, "serious_injury");
+  assert.equal(litchfield.severity, "critical");
+  assert.equal(litchfield.fatalities, 0);
+  assert.equal(litchfield.injured, 1);
+  assert.equal(litchfield.victimName, null);
+  assert.equal(litchfield.vehicleType, "car");
+  assert.equal(litchfield.city, "Litchfield");
+  assert.equal(litchfield.stateCode, "CT");
+  assert.equal(litchfield.occurredOn, "2026-11-16");
+  assert.equal(litchfield.lighting, "dusk");
+  assert.equal(litchfield.roadwayType, "Route 118");
+  assert.match(litchfield.summary, /4:58/);
+  assert.match(litchfield.summary, /life-threatening/);
+  assert.match(litchfield.context, /subscription-only/);
+  assert.equal(litchfield.latitude, 41.74603);
+  assert.equal(litchfield.longitude, -73.17553);
+  assert.equal(litchfield.sourceName, "Litchfield.bz");
+  assert.equal(
+    litchfield.sourceUrl,
+    "https://litchfield.bz/2026/11/16/bicyclist-critical-after-being-hit-by-vehicle/",
+  );
+
+  const hyannis = byId.get("news-81cc1d0ccf63374b");
+  assert.equal(hyannis.reviewStatus, "published");
+  assert.equal(hyannis.verified, true);
+  assert.equal(hyannis.outcome, "serious_injury");
+  assert.equal(hyannis.severity, "critical");
+  assert.equal(hyannis.injured, 1);
+  assert.equal(hyannis.victimName, null);
+  assert.equal(hyannis.vehicleType, null);
+  assert.equal(hyannis.city, "Hyannis");
+  assert.equal(hyannis.stateCode, "MA");
+  assert.equal(hyannis.occurredOn, "2026-11-16");
+  assert.equal(hyannis.roadwayType, "South Street");
+  assert.match(hyannis.summary, /Pine Avenue/);
+  assert.match(hyannis.summary, /Cape Cod Hospital/);
+  assert.match(hyannis.context, /Yarmouth Road/);
+  assert.equal(hyannis.latitude, 41.64923);
+  assert.equal(hyannis.longitude, -70.28766);
+  assert.equal(hyannis.sourceName, "Hyannis News");
+
+  const bagley = byId.get("news-42f0fedc2a63a584");
+  assert.equal(bagley.reviewStatus, "published");
+  assert.equal(bagley.verified, true);
+  assert.equal(bagley.outcome, "serious_injury");
+  assert.equal(bagley.severity, "high");
+  assert.equal(bagley.injured, 1);
+  assert.equal(bagley.victimName, "Shawn Mitchell Bagley");
+  assert.equal(bagley.victimAgeBand, "20\u201329");
+  assert.equal(bagley.crashType, "hit-from-behind");
+  assert.equal(bagley.vehicleType, "pickup");
+  assert.equal(bagley.city, "Kasota Township");
+  assert.equal(bagley.stateCode, "MN");
+  assert.equal(bagley.region, "Midwest");
+  assert.equal(bagley.occurredOn, "2026-11-15");
+  assert.equal(bagley.latitude, null);
+  assert.equal(bagley.longitude, null);
+  assert.match(bagley.summary, /Marcus Duane Mutschler/);
+  assert.match(bagley.summary, /Ram 1500/);
+  assert.match(bagley.context, /no pin/i);
+  assert.equal(bagley.sourceName, "St. Peter Herald");
+
+  const farmingville = byId.get("news-9d949016c34512bb");
+  assert.equal(farmingville.reviewStatus, "published");
+  assert.equal(farmingville.verified, true);
+  assert.equal(farmingville.outcome, "serious_injury");
+  assert.equal(farmingville.severity, "high");
+  assert.equal(farmingville.injured, 1);
+  assert.equal(farmingville.victimName, null);
+  assert.equal(farmingville.vehicleType, "car");
+  assert.equal(farmingville.city, "Farmingville");
+  assert.equal(farmingville.stateCode, "NY");
+  assert.equal(farmingville.occurredOn, "2026-11-14");
+  assert.equal(farmingville.roadwayType, "Horseblock Road");
+  assert.match(farmingville.summary, /Stop & Shop/);
+  assert.match(farmingville.summary, /Stony Brook/);
+  assert.equal(farmingville.latitude, 40.83006);
+  assert.equal(farmingville.longitude, -73.02129);
+  assert.equal(farmingville.sourceName, "Patch");
+
+  const sterling = byId.get("news-3c1bf442a900adaa");
+  assert.equal(sterling.reviewStatus, "published");
+  assert.equal(sterling.verified, true);
+  assert.equal(sterling.outcome, "serious_injury");
+  assert.equal(sterling.severity, "high");
+  assert.equal(sterling.fatalities, 0);
+  assert.equal(sterling.injured, 1);
+  assert.equal(sterling.victimName, null);
+  assert.equal(sterling.victimAgeBand, null);
+  assert.equal(sterling.crashType, "hit-and-run");
+  assert.equal(sterling.driverStatus, "charged");
+  assert.equal(sterling.helmet, "yes");
+  assert.equal(sterling.vehicleType, null);
+  assert.equal(sterling.city, "Sterling Ranch");
+  assert.equal(sterling.stateCode, "CO");
+  assert.equal(sterling.region, "West");
+  assert.equal(sterling.occurredOn, "2026-11-13");
+  assert.equal(sterling.roadwayType, "Middle Fork Street");
+  assert.match(sterling.summary, /Emily Nicholls/);
+  assert.match(sterling.summary, /minor/);
+  assert.match(sterling.context, /John Adams Academy/);
+  assert.equal(sterling.latitude, 39.48354);
+  assert.equal(sterling.longitude, -105.04219);
+  assert.equal(sterling.sourceName, "CBS Colorado");
+  assert.equal(
+    sterling.sourceUrl,
+    "https://www.cbsnews.com/colorado/news/colorado-deputies-arrest-hit-run-suspect-child-riding-bicycle-sterling-ranch/",
+  );
+
+  const riverside = byId.get("news-1dc762c9a53c8267");
+  assert.equal(riverside.reviewStatus, "pending");
+  assert.equal(riverside.verified, false);
+  assert.equal(riverside.outcome, "serious_injury");
+  assert.equal(riverside.severity, "moderate");
+  assert.equal(riverside.injured, 1);
+  assert.equal(riverside.victimName, null);
+  assert.equal(riverside.city, "Riverside");
+  assert.equal(riverside.stateCode, "CA");
+  assert.equal(riverside.occurredOn, "2026-11-14");
+  assert.match(riverside.summary, /RIV 26-43190/);
+  assert.match(riverside.context, /bicycle or was on foot/i);
+  assert.match(riverside.context, /David Perry/);
+  assert.equal(riverside.latitude, 33.92756);
+  assert.equal(riverside.longitude, -117.41984);
+  assert.equal(riverside.sourceName, "Riverside Fire Department");
+  assert.equal(riverside.sourceUrl, "https://riversideca.gov/fire/incident/adams-street-incident");
+
+  const published = [fallsChurch, litchfield, hyannis, bagley, farmingville, sterling];
+  assert.equal(published.filter((row) => row.outcome === "killed").length, 0);
+  assert.equal(published.filter((row) => row.outcome === "serious_injury").length, 6);
+  assert.ok(published.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(published.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(riverside.reviewStatus, "pending");
+  assert.equal(
+    news.filter((row) => row.city === "Chico" && row.occurredOn === "2026-11-14").length,
+    1,
+  );
+  assert.equal(
+    news.filter((row) => row.city === "Commerce" && row.occurredOn === "2026-11-15").length,
+    1,
+  );
+  assert.equal(news.filter((row) => row.victimName === "Shawn Mitchell Bagley").length, 1);
+  assert.equal(news.filter((row) => /Emily Nicholls/.test(row.summary)).length, 1);
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...published, riverside]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
