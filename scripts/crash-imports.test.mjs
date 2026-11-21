@@ -2437,7 +2437,7 @@ test("Nov 20 2026 desk sweep publishes confirmed crashes and skips the non-cycli
   assert.equal(covington.longitude, -90.07478);
   assert.equal(covington.locationPrecision, "town");
   assert.equal(covington.sourceName, "Louisiana State Police");
-  assert.equal(news[0].id, covington.id);
+  assert.ok(news.some((row) => row.id === covington.id));
   assert.equal(
     googleMapsSearchUrl({
       latitude: covington.latitude,
@@ -2556,6 +2556,220 @@ test("Nov 20 2026 desk sweep publishes confirmed crashes and skips the non-cycli
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of published) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 21 2026 desk sweep publishes confirmed crashes and queues the unverified ones", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const philadelphia = byId.get("news-508666b20ac0eac4");
+  assert.equal(philadelphia.reviewStatus, "published");
+  assert.equal(philadelphia.verified, true);
+  assert.equal(philadelphia.outcome, "killed");
+  assert.equal(philadelphia.severity, "critical");
+  assert.equal(philadelphia.fatalities, 1);
+  assert.equal(philadelphia.injured, 0);
+  assert.equal(philadelphia.victimName, null);
+  assert.equal(philadelphia.victimAgeBand, "20\u201329");
+  assert.equal(philadelphia.city, "Philadelphia");
+  assert.equal(philadelphia.stateCode, "PA");
+  assert.equal(philadelphia.region, "Northeast");
+  assert.equal(philadelphia.occurredOn, "2026-11-20");
+  assert.equal(philadelphia.datePrecision, "day");
+  assert.equal(philadelphia.roadwayType, "West Passyunk Avenue");
+  assert.equal(philadelphia.vehicleType, "car");
+  assert.equal(philadelphia.driverStatus, "at_scene");
+  assert.equal(philadelphia.lighting, "dark");
+  assert.match(philadelphia.summary, /28-year-old/);
+  assert.match(philadelphia.summary, /6:13 a\.m\./);
+  assert.match(philadelphia.summary, /not released/);
+  assert.match(philadelphia.context, /6:49 p\.m\./);
+  assert.match(philadelphia.context, /6100 block/);
+  assert.equal(philadelphia.latitude, 39.92086);
+  assert.equal(philadelphia.longitude, -75.19559);
+  assert.equal(philadelphia.sourceName, "NBC10 Philadelphia");
+  assert.equal(news[0].id, philadelphia.id);
+
+  const bangor = byId.get("news-14d9ab14d137229a");
+  assert.equal(bangor.reviewStatus, "published");
+  assert.equal(bangor.verified, true);
+  assert.equal(bangor.outcome, "serious_injury");
+  assert.equal(bangor.severity, "critical");
+  assert.equal(bangor.injured, 1);
+  assert.equal(bangor.fatalities, 0);
+  assert.equal(bangor.victimName, null);
+  assert.equal(bangor.city, "Bangor");
+  assert.equal(bangor.stateCode, "ME");
+  assert.equal(bangor.occurredOn, "2026-11-20");
+  assert.equal(bangor.roadwayType, "Broadway");
+  assert.equal(bangor.lighting, "dark");
+  assert.match(bangor.summary, /life-threatening/);
+  assert.match(bangor.summary, /School Street/);
+  assert.match(bangor.summary, /Katy England/);
+  assert.equal(bangor.latitude, 44.8246);
+  assert.equal(bangor.longitude, -68.78042);
+  assert.equal(bangor.sourceName, "Bangor Daily News");
+
+  const selden = byId.get("news-8446c26c94f9adb7");
+  assert.equal(selden.reviewStatus, "pending");
+  assert.equal(selden.verified, false);
+  assert.equal(selden.outcome, "serious_injury");
+  assert.equal(selden.city, "Selden");
+  assert.equal(selden.stateCode, "NY");
+  assert.equal(selden.occurredOn, "2026-11-20");
+  assert.equal(selden.crashType, "intersection");
+  assert.match(selden.summary, /3:20 p\.m\./);
+  assert.match(selden.summary, /Route 25/);
+  assert.match(selden.context, /injury is not stated/i);
+  assert.match(selden.context, /10:20 p\.m\./);
+  assert.equal(selden.latitude, 40.86545);
+  assert.equal(selden.longitude, -73.04125);
+  assert.equal(selden.sourceName, "Patch");
+
+  const arkadelphia = byId.get("news-e812618b175166e3");
+  assert.equal(arkadelphia.reviewStatus, "pending");
+  assert.equal(arkadelphia.verified, false);
+  assert.equal(arkadelphia.outcome, "serious_injury");
+  assert.equal(arkadelphia.city, "Arkadelphia");
+  assert.equal(arkadelphia.stateCode, "AR");
+  assert.equal(arkadelphia.region, "South");
+  assert.equal(arkadelphia.occurredOn, "2026-11-20");
+  assert.match(arkadelphia.summary, /pedestrian/);
+  assert.match(arkadelphia.summary, /Feaster Trail/);
+  assert.match(arkadelphia.context, /no report confirmed the person was riding a bicycle/i);
+  assert.equal(arkadelphia.latitude, 34.12775);
+  assert.equal(arkadelphia.longitude, -93.08019);
+  assert.equal(arkadelphia.sourceName, "CrimeRadar");
+
+  const gorsuch = byId.get("news-d480a5acf19714ce");
+  assert.equal(gorsuch.reviewStatus, "published");
+  assert.equal(gorsuch.verified, true);
+  assert.equal(gorsuch.outcome, "killed");
+  assert.equal(gorsuch.fatalities, 1);
+  assert.equal(gorsuch.victimName, "Christopher Gorsuch");
+  assert.equal(gorsuch.victimAgeBand, "40\u201349");
+  assert.equal(gorsuch.city, "London");
+  assert.equal(gorsuch.stateCode, "KY");
+  assert.equal(gorsuch.region, "South");
+  assert.equal(gorsuch.occurredOn, "2026-11-19");
+  assert.equal(gorsuch.vehicleType, "car");
+  assert.equal(gorsuch.roadwayType, "Maple Grove Road");
+  assert.match(gorsuch.summary, /Edith Rich/);
+  assert.match(gorsuch.summary, /Pontiac Grand Am/);
+  assert.match(gorsuch.summary, /10:40 p\.m\./);
+  assert.match(gorsuch.context, /WKYT said Sunday/);
+  assert.equal(gorsuch.latitude, 37.06443);
+  assert.equal(gorsuch.longitude, -84.11648);
+  assert.equal(gorsuch.sourceName, "WYMT");
+
+  const badertscher = byId.get("news-b7672188326140d5");
+  assert.equal(badertscher.reviewStatus, "published");
+  assert.equal(badertscher.verified, true);
+  assert.equal(badertscher.outcome, "killed");
+  assert.equal(badertscher.fatalities, 1);
+  assert.equal(badertscher.injured, 0);
+  assert.equal(badertscher.victimName, "Joseph Robert Badertscher");
+  assert.equal(badertscher.victimAgeBand, "60\u201369");
+  assert.equal(badertscher.city, "Costa Mesa");
+  assert.equal(badertscher.stateCode, "CA");
+  assert.equal(badertscher.region, "West");
+  assert.equal(badertscher.occurredOn, "2026-11-19");
+  assert.equal(badertscher.crashType, "intersection");
+  assert.equal(badertscher.lighting, "dark");
+  assert.match(badertscher.summary, /e-bike/);
+  assert.match(badertscher.summary, /red light/);
+  assert.match(badertscher.summary, /Huntington Beach/);
+  assert.equal(badertscher.latitude, 33.67253);
+  assert.equal(badertscher.longitude, -117.93546);
+  assert.equal(badertscher.sourceName, "Los Angeles Times");
+
+  const amherst = byId.get("news-73bb28604b900c35");
+  assert.equal(amherst.reviewStatus, "published");
+  assert.equal(amherst.verified, true);
+  assert.equal(amherst.outcome, "serious_injury");
+  assert.equal(amherst.severity, "high");
+  assert.equal(amherst.injured, 1);
+  assert.equal(amherst.victimName, null);
+  assert.equal(amherst.victimAgeBand, "70\u201379");
+  assert.equal(amherst.city, "Amherst");
+  assert.equal(amherst.stateCode, "NY");
+  assert.equal(amherst.occurredOn, "2026-11-19");
+  assert.equal(amherst.vehicleType, "car");
+  assert.equal(amherst.roadwayType, "Wehrle Drive");
+  assert.match(amherst.summary, /Toyota Camry/);
+  assert.match(amherst.summary, /76-year-old/);
+  assert.match(amherst.summary, /chest and head/);
+  assert.equal(amherst.latitude, 42.94963);
+  assert.equal(amherst.longitude, -78.7817);
+  assert.equal(amherst.sourceName, "WGRZ");
+
+  const andover = byId.get("news-b04d0f84a893408b");
+  assert.equal(andover.reviewStatus, "published");
+  assert.equal(andover.verified, true);
+  assert.equal(andover.outcome, "serious_injury");
+  assert.equal(andover.severity, "moderate");
+  assert.equal(andover.injured, 1);
+  assert.equal(andover.victimName, null);
+  assert.equal(andover.city, "Andover");
+  assert.equal(andover.stateCode, "MA");
+  assert.equal(andover.occurredOn, "2026-11-19");
+  assert.equal(andover.vehicleType, "SUV");
+  assert.equal(andover.crashType, "intersection");
+  assert.match(andover.summary, /Clark and Dascomb/);
+  assert.match(andover.summary, /Lawrence General/);
+  assert.match(andover.context, /extent of the bicyclist's injuries was not established/i);
+  assert.equal(andover.latitude, 42.63288);
+  assert.equal(andover.longitude, -71.16815);
+  assert.equal(andover.sourceName, "Andover News");
+
+  const vanderpool = byId.get("news-c7ce6ca44a545299");
+  assert.equal(vanderpool.reviewStatus, "published");
+  assert.equal(vanderpool.verified, true);
+  assert.equal(vanderpool.outcome, "killed");
+  assert.equal(vanderpool.fatalities, 1);
+  assert.equal(vanderpool.victimName, "Nicholas Vanderpool");
+  assert.equal(vanderpool.victimAgeBand, "40\u201349");
+  assert.equal(vanderpool.city, "San Jose");
+  assert.equal(vanderpool.stateCode, "CA");
+  assert.equal(vanderpool.region, "West");
+  assert.equal(vanderpool.occurredOn, "2026-11-14");
+  assert.equal(vanderpool.roadwayType, "San Felipe Road");
+  assert.equal(vanderpool.vehicleType, "car");
+  assert.equal(vanderpool.driverStatus, "at_scene");
+  assert.match(vanderpool.summary, /Toyota Camry/);
+  assert.match(vanderpool.summary, /Mousa Court/);
+  assert.match(vanderpool.context, /East Bay Times page was not opened/);
+  assert.equal(vanderpool.latitude, 37.30438);
+  assert.equal(vanderpool.longitude, -121.77634);
+  assert.equal(vanderpool.sourceName, "Hoodline");
+
+  const publishedRows = [philadelphia, bangor, gorsuch, badertscher, amherst, andover, vanderpool];
+  assert.equal(publishedRows.filter((row) => row.outcome === "killed").length, 4);
+  assert.equal(publishedRows.filter((row) => row.outcome === "serious_injury").length, 3);
+  assert.ok(publishedRows.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(publishedRows.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(selden.reviewStatus, "pending");
+  assert.equal(arkadelphia.reviewStatus, "pending");
+  assert.equal(news.filter((row) => row.victimName === "Christopher Gorsuch").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Joseph Robert Badertscher").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Nicholas Vanderpool").length, 1);
+  assert.equal(news.filter((row) => row.city === "Philadelphia" && row.occurredOn === "2026-11-20").length, 1);
+  assert.equal(news.filter((row) => row.city === "Philadelphia" && row.occurredOn === "2026-11-13").length, 1);
+  assert.equal(news.filter((row) => row.city === "Long Beach" && row.occurredOn === "2026-10-26").length, 1);
+  assert.equal(news.filter((row) => row.city === "Long Beach" && row.occurredOn.startsWith("2026-11")).length, 0);
+  assert.equal(news.filter((row) => row.city === "Damariscotta" && row.occurredOn === "2026-11-04").length, 1);
+  assert.equal(news.filter((row) => row.city === "Bremen").length, 0);
+  assert.equal(news.filter((row) => row.city === "San Jose" && row.occurredOn === "2026-11-14").length, 1);
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...publishedRows, selden, arkadelphia]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
