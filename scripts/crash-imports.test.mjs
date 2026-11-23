@@ -2804,7 +2804,7 @@ test("Nov 22 2026 desk sweep publishes confirmed crashes and queues the unverifi
   assert.equal(westchester.latitude, 33.94182);
   assert.equal(westchester.longitude, -118.4264);
   assert.equal(westchester.sourceName, "Los Angeles Fire Department");
-  assert.equal(news[0].id, westchester.id);
+  assert.ok(news[0].occurredOn >= westchester.occurredOn);
 
   const thomas = byId.get("news-9594486ac54e4b77");
   assert.equal(thomas.reviewStatus, "published");
@@ -2937,7 +2937,7 @@ test("Nov 22 2026 desk sweep publishes confirmed crashes and queues the unverifi
   assert.equal(roseville.city, "Roseville");
   assert.equal(roseville.stateCode, "CA");
   assert.equal(roseville.occurredOn, "2026-11-21");
-  assert.equal(roseville.datePrecision, "published");
+  assert.equal(roseville.datePrecision, "day");
   assert.equal(roseville.latitude, null);
   assert.equal(roseville.longitude, null);
   assert.equal(roseville.victimAgeBand, "30\u201339");
@@ -2982,6 +2982,248 @@ test("Nov 22 2026 desk sweep publishes confirmed crashes and queues the unverifi
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...publishedRows, washington, rockwood, roseville, fallsChurch]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 23 2026 desk sweep publishes confirmed crashes and queues the incomplete ones", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const bentonville = byId.get("news-0d7cb586307812d9");
+  assert.equal(bentonville.reviewStatus, "published");
+  assert.equal(bentonville.verified, true);
+  assert.equal(bentonville.outcome, "killed");
+  assert.equal(bentonville.severity, "critical");
+  assert.equal(bentonville.fatalities, 1);
+  assert.equal(bentonville.injured, 0);
+  assert.equal(bentonville.victimName, "Jacob Staley");
+  assert.equal(bentonville.victimAgeBand, "30\u201339");
+  assert.equal(bentonville.city, "Bentonville");
+  assert.equal(bentonville.stateCode, "AR");
+  assert.equal(bentonville.region, "South");
+  assert.equal(bentonville.occurredOn, "2026-11-21");
+  assert.equal(bentonville.datePrecision, "day");
+  assert.equal(bentonville.crashType, "intersection");
+  assert.equal(bentonville.vehicleType, "car");
+  assert.equal(bentonville.roadwayType, "Southwest 14th Street");
+  assert.equal(bentonville.lighting, "daylight");
+  assert.match(bentonville.summary, /e-bike/);
+  assert.match(bentonville.summary, /3:40 p\.m\./);
+  assert.match(bentonville.summary, /Ashokkmunar/);
+  assert.match(bentonville.context, /pedestrian/);
+  assert.equal(bentonville.latitude, 36.35764);
+  assert.equal(bentonville.longitude, -94.24347);
+  assert.equal(bentonville.sourceName, "Northwest Arkansas Democrat-Gazette");
+  assert.equal(news[0].id, bentonville.id);
+
+  const levittown = byId.get("news-f53c495b37a2dc97");
+  assert.equal(levittown.reviewStatus, "published");
+  assert.equal(levittown.verified, true);
+  assert.equal(levittown.outcome, "serious_injury");
+  assert.equal(levittown.severity, "critical");
+  assert.equal(levittown.fatalities, 0);
+  assert.equal(levittown.injured, 1);
+  assert.equal(levittown.victimName, null);
+  assert.equal(levittown.victimAgeBand, "10\u201319");
+  assert.equal(levittown.city, "Levittown");
+  assert.equal(levittown.stateCode, "NY");
+  assert.equal(levittown.region, "Northeast");
+  assert.equal(levittown.occurredOn, "2026-11-22");
+  assert.equal(levittown.crashType, "intersection");
+  assert.equal(levittown.vehicleType, "car");
+  assert.equal(levittown.driverStatus, "at_scene");
+  assert.equal(levittown.roadwayType, "Hempstead Turnpike");
+  assert.equal(levittown.lighting, "daylight");
+  assert.match(levittown.summary, /13-year-old/);
+  assert.match(levittown.summary, /12:50 p\.m\./);
+  assert.match(levittown.summary, /not released/);
+  assert.match(levittown.context, /12:51 p\.m\./);
+  assert.equal(levittown.latitude, 40.72566);
+  assert.equal(levittown.longitude, -73.49765);
+  assert.equal(levittown.sourceName, "Daily Voice");
+
+  const denver = byId.get("news-9d9b3ab049e11522");
+  assert.equal(denver.reviewStatus, "published");
+  assert.equal(denver.verified, true);
+  assert.equal(denver.outcome, "serious_injury");
+  assert.equal(denver.severity, "high");
+  assert.equal(denver.injured, 1);
+  assert.equal(denver.victimName, null);
+  assert.equal(denver.city, "Denver");
+  assert.equal(denver.stateCode, "CO");
+  assert.equal(denver.region, "West");
+  assert.equal(denver.occurredOn, "2026-11-21");
+  assert.equal(denver.crashType, "intersection");
+  assert.equal(denver.vehicleType, null);
+  assert.equal(denver.roadwayType, "East 16th Avenue");
+  assert.match(denver.summary, /serious injuries/);
+  assert.match(denver.context, /5:05 a\.m\./);
+  assert.equal(denver.latitude, 39.74163);
+  assert.equal(denver.longitude, -104.96599);
+  assert.equal(denver.sourceName, "Denver Police Department");
+
+  const chester = byId.get("news-9141e8cc60e0fb5a");
+  assert.equal(chester.reviewStatus, "published");
+  assert.equal(chester.verified, true);
+  assert.equal(chester.outcome, "serious_injury");
+  assert.equal(chester.severity, "high");
+  assert.equal(chester.injured, 1);
+  assert.equal(chester.victimName, null);
+  assert.equal(chester.city, "Chester");
+  assert.equal(chester.stateCode, "VA");
+  assert.equal(chester.region, "South");
+  assert.equal(chester.occurredOn, "2026-11-21");
+  assert.equal(chester.driverStatus, "at_scene");
+  assert.equal(chester.lighting, "dark");
+  assert.equal(chester.roadwayType, "West Hundred Road");
+  assert.match(chester.summary, /broken leg/);
+  assert.match(chester.summary, /11:29 p\.m\./);
+  assert.match(chester.summary, /Chesterfield County/);
+  assert.equal(chester.latitude, 37.34958);
+  assert.equal(chester.longitude, -77.3652);
+  assert.equal(chester.sourceName, "WRIC");
+
+  const sanAntonio = byId.get("news-65c29f8a0d1ae22e");
+  assert.equal(sanAntonio.reviewStatus, "published");
+  assert.equal(sanAntonio.verified, true);
+  assert.equal(sanAntonio.outcome, "serious_injury");
+  assert.equal(sanAntonio.severity, "low");
+  assert.equal(sanAntonio.injured, 1);
+  assert.equal(sanAntonio.victimName, null);
+  assert.equal(sanAntonio.victimAgeBand, "40\u201349");
+  assert.equal(sanAntonio.city, "San Antonio");
+  assert.equal(sanAntonio.stateCode, "TX");
+  assert.equal(sanAntonio.occurredOn, "2026-11-21");
+  assert.equal(sanAntonio.crashType, "hit-and-run");
+  assert.equal(sanAntonio.driverStatus, "fled");
+  assert.equal(sanAntonio.vehicleType, "car");
+  assert.equal(sanAntonio.lighting, "dark");
+  assert.match(sanAntonio.summary, /42-year-old/);
+  assert.match(sanAntonio.summary, /trailer/);
+  assert.match(sanAntonio.summary, /10:13 p\.m\./);
+  assert.equal(sanAntonio.latitude, 29.58966);
+  assert.equal(sanAntonio.longitude, -98.35608);
+  assert.equal(sanAntonio.sourceName, "News 4 San Antonio");
+
+  const oceanside = byId.get("news-7697805ea0750ef9");
+  assert.equal(oceanside.reviewStatus, "published");
+  assert.equal(oceanside.verified, true);
+  assert.equal(oceanside.outcome, "serious_injury");
+  assert.equal(oceanside.severity, "moderate");
+  assert.equal(oceanside.injured, 1);
+  assert.equal(oceanside.victimName, null);
+  assert.equal(oceanside.city, "Oceanside");
+  assert.equal(oceanside.stateCode, "WA");
+  assert.equal(oceanside.region, "West");
+  assert.equal(oceanside.occurredOn, "2026-11-21");
+  assert.equal(oceanside.vehicleType, "car");
+  assert.equal(oceanside.roadwayType, "State Route 103");
+  assert.match(oceanside.summary, /158th Place/);
+  assert.match(oceanside.context, /not stored/);
+  assert.equal(oceanside.latitude, 46.41683);
+  assert.equal(oceanside.longitude, -124.05402);
+  assert.equal(oceanside.sourceName, "Washington State Patrol");
+
+  const garvin = byId.get("news-dafb7a0fa4d253d5");
+  assert.equal(garvin.reviewStatus, "published");
+  assert.equal(garvin.verified, true);
+  assert.equal(garvin.outcome, "serious_injury");
+  assert.equal(garvin.severity, "low");
+  assert.equal(garvin.injured, 1);
+  assert.equal(garvin.victimName, "Bryan Abney");
+  assert.equal(garvin.city, "Garvin County");
+  assert.equal(garvin.stateCode, "OK");
+  assert.equal(garvin.region, "South");
+  assert.equal(garvin.occurredOn, "2026-11-20");
+  assert.equal(garvin.crashType, "hit-from-behind");
+  assert.equal(garvin.vehicleType, "car");
+  assert.equal(garvin.roadwayType, "Highway 77");
+  assert.equal(garvin.latitude, null);
+  assert.equal(garvin.longitude, null);
+  assert.match(garvin.summary, /minor/);
+  assert.match(garvin.summary, /Tyler Owensby/);
+  assert.match(garvin.context, /mini-bike/);
+  assert.equal(garvin.sourceName, "KXII");
+
+  const santaBarbara = byId.get("news-437fb008d485f68f");
+  assert.equal(santaBarbara.reviewStatus, "pending");
+  assert.equal(santaBarbara.verified, false);
+  assert.equal(santaBarbara.outcome, "serious_injury");
+  assert.equal(santaBarbara.severity, "moderate");
+  assert.equal(santaBarbara.city, "Santa Barbara");
+  assert.equal(santaBarbara.stateCode, "CA");
+  assert.equal(santaBarbara.occurredOn, "2026-11-22");
+  assert.equal(santaBarbara.lighting, "dark");
+  assert.equal(santaBarbara.vehicleType, "car");
+  assert.match(santaBarbara.summary, /parked vehicle/);
+  assert.match(santaBarbara.context, /No moving motor vehicle was involved/);
+  assert.equal(santaBarbara.latitude, 34.4276);
+  assert.equal(santaBarbara.longitude, -119.69994);
+  assert.equal(santaBarbara.sourceName, "Noozhawk");
+
+  const clay = byId.get("news-23135c2acff14ac1");
+  assert.equal(clay.reviewStatus, "pending");
+  assert.equal(clay.verified, false);
+  assert.equal(clay.outcome, "serious_injury");
+  assert.equal(clay.severity, "low");
+  assert.equal(clay.victimName, "Zane Fowler");
+  assert.equal(clay.victimAgeBand, "10\u201319");
+  assert.equal(clay.city, "Green Cove Springs");
+  assert.equal(clay.stateCode, "FL");
+  assert.equal(clay.region, "South");
+  assert.equal(clay.occurredOn, "2026-11-20");
+  assert.equal(clay.datePrecision, "published");
+  assert.equal(clay.crashType, "hit-and-run");
+  assert.equal(clay.driverStatus, "fled");
+  assert.equal(clay.vehicleType, "pickup");
+  assert.match(clay.summary, /e-bike/);
+  assert.match(clay.summary, /14/);
+  assert.match(clay.context, /does not state a crash date/);
+  assert.equal(clay.latitude, 30.04869);
+  assert.equal(clay.longitude, -81.8097);
+  assert.equal(clay.sourceName, "Action News Jax");
+
+  const roseville = byId.get("news-efbf72d8cc1912b5");
+  assert.equal(roseville.reviewStatus, "pending");
+  assert.equal(roseville.verified, false);
+  assert.equal(roseville.severity, "critical");
+  assert.equal(roseville.datePrecision, "day");
+  assert.equal(roseville.occurredOn, "2026-11-21");
+  assert.match(roseville.summary, /critically injured/);
+  assert.match(roseville.context, /no motor vehicle is described/i);
+  assert.equal(roseville.latitude, null);
+
+  const publishedRows = [bentonville, levittown, denver, chester, sanAntonio, oceanside, garvin];
+  assert.equal(publishedRows.filter((row) => row.outcome === "killed").length, 1);
+  assert.equal(publishedRows.filter((row) => row.outcome === "serious_injury").length, 6);
+  assert.ok(publishedRows.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(publishedRows.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(santaBarbara.reviewStatus, "pending");
+  assert.equal(clay.reviewStatus, "pending");
+  assert.equal(news.filter((row) => row.victimName === "Jacob Staley").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Bryan Abney").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Zane Fowler").length, 1);
+  assert.equal(news.filter((row) => row.city === "Levittown").length, 1);
+  assert.equal(news.filter((row) => row.city === "Bentonville").length, 1);
+  assert.equal(news.filter((row) => row.city === "Denver" && row.occurredOn === "2026-11-21").length, 1);
+  assert.equal(news.filter((row) => row.city === "Chester" && row.occurredOn === "2026-11-21").length, 1);
+  assert.equal(news.filter((row) => row.city === "San Antonio" && row.occurredOn === "2026-11-21").length, 1);
+  assert.equal(news.filter((row) => row.city === "San Antonio" && row.occurredOn === "2026-11-19").length, 1);
+  assert.equal(news.filter((row) => row.city === "Oceanside").length, 1);
+  assert.equal(news.filter((row) => row.city === "Garvin County").length, 1);
+  assert.equal(news.filter((row) => row.city === "Santa Barbara" && row.occurredOn === "2026-11-22").length, 1);
+  assert.equal(news.filter((row) => row.city === "Green Cove Springs").length, 1);
+  assert.equal(news.filter((row) => row.city === "Covington" && row.occurredOn === "2026-11-18").length, 1);
+  assert.equal(news.filter((row) => row.city === "Wichita Falls").length, 0);
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...publishedRows, santaBarbara, clay, roseville]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
