@@ -3171,8 +3171,8 @@ test("Nov 23 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(santaBarbara.sourceName, "Noozhawk");
 
   const clay = byId.get("news-23135c2acff14ac1");
-  assert.equal(clay.reviewStatus, "pending");
-  assert.equal(clay.verified, false);
+  assert.equal(clay.reviewStatus, "published");
+  assert.equal(clay.verified, true);
   assert.equal(clay.outcome, "serious_injury");
   assert.equal(clay.severity, "low");
   assert.equal(clay.victimName, "Zane Fowler");
@@ -3180,14 +3180,16 @@ test("Nov 23 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(clay.city, "Green Cove Springs");
   assert.equal(clay.stateCode, "FL");
   assert.equal(clay.region, "South");
-  assert.equal(clay.occurredOn, "2026-11-20");
-  assert.equal(clay.datePrecision, "published");
+  assert.equal(clay.occurredOn, "2026-11-19");
+  assert.equal(clay.datePrecision, "day");
   assert.equal(clay.crashType, "hit-and-run");
   assert.equal(clay.driverStatus, "fled");
   assert.equal(clay.vehicleType, "pickup");
+  assert.equal(clay.helmet, "yes");
   assert.match(clay.summary, /e-bike/);
   assert.match(clay.summary, /14/);
-  assert.match(clay.context, /does not state a crash date/);
+  assert.match(clay.context, /did not state a crash date/);
+  assert.match(clay.context, /Nov\. 19/);
   assert.equal(clay.latitude, 30.04869);
   assert.equal(clay.longitude, -81.8097);
   assert.equal(clay.sourceName, "Action News Jax");
@@ -3208,7 +3210,7 @@ test("Nov 23 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.ok(publishedRows.every((row) => row.verified === true && row.reviewStatus === "published"));
   assert.ok(publishedRows.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
   assert.equal(santaBarbara.reviewStatus, "pending");
-  assert.equal(clay.reviewStatus, "pending");
+  assert.equal(clay.reviewStatus, "published");
   assert.equal(news.filter((row) => row.victimName === "Jacob Staley").length, 1);
   assert.equal(news.filter((row) => row.victimName === "Bryan Abney").length, 1);
   assert.equal(news.filter((row) => row.victimName === "Zane Fowler").length, 1);
@@ -3247,7 +3249,8 @@ test("Nov 24 2026 desk sweep publishes confirmed crashes and queues the undated 
   assert.equal(missouri.severity, "critical");
   assert.equal(missouri.fatalities, 1);
   assert.equal(missouri.injured, 0);
-  assert.equal(missouri.victimName, null);
+  assert.equal(missouri.victimName, "Rashil Talreja");
+  assert.equal(missouri.victimAgeBand, "10\u201319");
   assert.equal(missouri.city, "Missouri City");
   assert.equal(missouri.stateCode, "TX");
   assert.equal(missouri.region, "South");
@@ -3264,7 +3267,7 @@ test("Nov 24 2026 desk sweep publishes confirmed crashes and queues the undated 
   assert.equal(missouri.latitude, null);
   assert.equal(missouri.longitude, null);
   assert.equal(missouri.sourceName, "KHOU");
-  assert.equal(news[0].id, missouri.id);
+  assert.ok(news[0].occurredOn >= missouri.occurredOn);
 
   const brooksville = byId.get("news-2a6db617e5914332");
   assert.equal(brooksville.reviewStatus, "published");
@@ -3411,6 +3414,239 @@ test("Nov 24 2026 desk sweep publishes confirmed crashes and queues the undated 
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...publishedRows, jacksonville, flores, robinson, klier]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomplete ones", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const manhattan = byId.get("news-4503b525e2316a02");
+  assert.equal(manhattan.reviewStatus, "published");
+  assert.equal(manhattan.verified, true);
+  assert.equal(manhattan.outcome, "killed");
+  assert.equal(manhattan.severity, "critical");
+  assert.equal(manhattan.fatalities, 1);
+  assert.equal(manhattan.injured, 0);
+  assert.equal(manhattan.victimName, null);
+  assert.equal(manhattan.victimAgeBand, "20\u201329");
+  assert.equal(manhattan.city, "Manhattan");
+  assert.equal(manhattan.stateCode, "NY");
+  assert.equal(manhattan.region, "Northeast");
+  assert.equal(manhattan.occurredOn, "2026-11-24");
+  assert.equal(manhattan.crashType, "intersection");
+  assert.equal(manhattan.vehicleType, "SUV");
+  assert.equal(manhattan.driverStatus, "at_scene");
+  assert.equal(manhattan.lighting, "dark");
+  assert.match(manhattan.summary, /Citi Bike/);
+  assert.match(manhattan.summary, /6:50 p\.m\./);
+  assert.match(manhattan.summary, /not released/);
+  assert.match(manhattan.summary, /23-year-old/);
+  assert.equal(manhattan.latitude, 40.73975);
+  assert.equal(manhattan.longitude, -74.00252);
+  assert.equal(manhattan.sourceName, "New York Post");
+  assert.equal(news[0].id, manhattan.id);
+
+  const fresno = byId.get("news-fa6fccdb7ea87a2a");
+  assert.equal(fresno.reviewStatus, "published");
+  assert.equal(fresno.verified, true);
+  assert.equal(fresno.outcome, "killed");
+  assert.equal(fresno.severity, "critical");
+  assert.equal(fresno.fatalities, 1);
+  assert.equal(fresno.injured, 0);
+  assert.equal(fresno.victimName, null);
+  assert.equal(fresno.victimAgeBand, "50\u201359");
+  assert.equal(fresno.city, "Fresno");
+  assert.equal(fresno.stateCode, "CA");
+  assert.equal(fresno.region, "West");
+  assert.equal(fresno.occurredOn, "2026-11-24");
+  assert.equal(fresno.crashType, "hit-and-run");
+  assert.equal(fresno.driverStatus, "fled");
+  assert.equal(fresno.vehicleType, "car");
+  assert.equal(fresno.lighting, "dark");
+  assert.match(fresno.summary, /7 p\.m\./);
+  assert.match(fresno.summary, /not released/);
+  assert.match(fresno.summary, /red light/);
+  assert.match(fresno.context, /no vehicle description/);
+  assert.equal(fresno.latitude, 36.71415);
+  assert.equal(fresno.longitude, -119.79074);
+  assert.equal(fresno.sourceName, "Your Central Valley");
+
+  const culver = byId.get("news-5a385195aa0522ac");
+  assert.equal(culver.reviewStatus, "published");
+  assert.equal(culver.verified, true);
+  assert.equal(culver.outcome, "killed");
+  assert.equal(culver.severity, "critical");
+  assert.equal(culver.fatalities, 1);
+  assert.equal(culver.injured, 0);
+  assert.equal(culver.victimName, null);
+  assert.equal(culver.victimAgeBand, "40\u201349");
+  assert.equal(culver.city, "Culver City");
+  assert.equal(culver.stateCode, "CA");
+  assert.equal(culver.region, "West");
+  assert.equal(culver.occurredOn, "2026-11-17");
+  assert.equal(culver.driverStatus, "at_scene");
+  assert.equal(culver.crashType, "intersection");
+  assert.equal(culver.lighting, "daylight");
+  assert.match(culver.summary, /40s/);
+  assert.match(culver.summary, /Nov\. 23/);
+  assert.match(culver.summary, /not released/);
+  assert.match(culver.context, /Braddock Drive/);
+  assert.equal(culver.latitude, 34.00289);
+  assert.equal(culver.longitude, -118.40682);
+  assert.equal(culver.sourceName, "MyNewsLA");
+
+  const glenEllyn = byId.get("news-cf8ab27ee5063b64");
+  assert.equal(glenEllyn.reviewStatus, "published");
+  assert.equal(glenEllyn.verified, true);
+  assert.equal(glenEllyn.outcome, "killed");
+  assert.equal(glenEllyn.severity, "critical");
+  assert.equal(glenEllyn.fatalities, 1);
+  assert.equal(glenEllyn.injured, 0);
+  assert.equal(glenEllyn.victimName, "Jhon Wang");
+  assert.equal(glenEllyn.victimAgeBand, "70\u201379");
+  assert.equal(glenEllyn.city, "Glen Ellyn");
+  assert.equal(glenEllyn.stateCode, "IL");
+  assert.equal(glenEllyn.region, "Midwest");
+  assert.equal(glenEllyn.occurredOn, "2026-11-20");
+  assert.equal(glenEllyn.crashType, "hit-and-run");
+  assert.equal(glenEllyn.driverStatus, "charged");
+  assert.equal(glenEllyn.vehicleType, "pickup");
+  assert.equal(glenEllyn.lighting, "daylight");
+  assert.match(glenEllyn.summary, /73/);
+  assert.match(glenEllyn.summary, /Dawid Smoter/);
+  assert.match(glenEllyn.context, /not been released/);
+  assert.equal(glenEllyn.latitude, 41.89793);
+  assert.equal(glenEllyn.longitude, -88.06348);
+  assert.equal(glenEllyn.sourceName, "Daily Herald");
+
+  const yuma = byId.get("news-b1518ce9b959c294");
+  assert.equal(yuma.reviewStatus, "published");
+  assert.equal(yuma.verified, true);
+  assert.equal(yuma.outcome, "serious_injury");
+  assert.equal(yuma.severity, "high");
+  assert.equal(yuma.injured, 1);
+  assert.equal(yuma.fatalities, 0);
+  assert.equal(yuma.victimName, null);
+  assert.equal(yuma.victimAgeBand, "70\u201379");
+  assert.equal(yuma.city, "Yuma");
+  assert.equal(yuma.stateCode, "AZ");
+  assert.equal(yuma.region, "West");
+  assert.equal(yuma.occurredOn, "2026-11-23");
+  assert.equal(yuma.crashType, "intersection");
+  assert.equal(yuma.vehicleType, "pickup");
+  assert.equal(yuma.lighting, "daylight");
+  assert.match(yuma.summary, /74-year-old/);
+  assert.match(yuma.summary, /10:42 a\.m\./);
+  assert.match(yuma.summary, /e-bike|electric bicycle/);
+  assert.match(yuma.context, /F-150/);
+  assert.equal(yuma.latitude, 32.63423);
+  assert.equal(yuma.longitude, -114.38411);
+  assert.equal(yuma.sourceName, "Yuma Sun");
+
+  const florhamNew = byId.get("news-c29f739d64e36863");
+  assert.equal(florhamNew.reviewStatus, "published");
+  assert.equal(florhamNew.verified, true);
+  assert.equal(florhamNew.outcome, "serious_injury");
+  assert.equal(florhamNew.severity, "moderate");
+  assert.equal(florhamNew.injured, 1);
+  assert.equal(florhamNew.victimName, null);
+  assert.equal(florhamNew.city, "Florham Park");
+  assert.equal(florhamNew.stateCode, "NJ");
+  assert.equal(florhamNew.region, "Northeast");
+  assert.equal(florhamNew.occurredOn, "2026-10-24");
+  assert.equal(florhamNew.crashType, "hit-and-run");
+  assert.equal(florhamNew.driverStatus, "charged");
+  assert.match(florhamNew.summary, /3:30 p\.m\./);
+  assert.match(florhamNew.summary, /Akintayo Fafesobi/);
+  assert.match(florhamNew.summary, /not released/);
+  assert.equal(florhamNew.latitude, null);
+  assert.equal(florhamNew.longitude, null);
+  assert.equal(florhamNew.sourceName, "WRNJ");
+
+  const eureka = byId.get("news-66a3d21161799c52");
+  assert.equal(eureka.reviewStatus, "pending");
+  assert.equal(eureka.verified, false);
+  assert.equal(eureka.outcome, "serious_injury");
+  assert.equal(eureka.city, "Eureka");
+  assert.equal(eureka.stateCode, "CA");
+  assert.equal(eureka.region, "West");
+  assert.equal(eureka.occurredOn, "2026-11-23");
+  assert.equal(eureka.datePrecision, "day");
+  assert.equal(eureka.victimAgeBand, "70\u201379");
+  assert.match(eureka.summary, /79-year-old/);
+  assert.match(eureka.summary, /11:15 a\.m\./);
+  assert.match(eureka.context, /extent of the man's injuries was not immediately known/);
+  assert.equal(eureka.latitude, 40.80385);
+  assert.equal(eureka.longitude, -124.14929);
+  assert.equal(eureka.sourceName, "Redheaded Blackbelt");
+
+  const phoenixDeath = byId.get("news-6c8373ee0e5c662e");
+  assert.equal(phoenixDeath.reviewStatus, "pending");
+  assert.equal(phoenixDeath.verified, false);
+  assert.equal(phoenixDeath.outcome, "killed");
+  assert.equal(phoenixDeath.severity, "critical");
+  assert.equal(phoenixDeath.fatalities, 1);
+  assert.equal(phoenixDeath.victimName, "Christopher David Callaway");
+  assert.equal(phoenixDeath.victimAgeBand, "50\u201359");
+  assert.equal(phoenixDeath.city, "Phoenix");
+  assert.equal(phoenixDeath.stateCode, "AZ");
+  assert.equal(phoenixDeath.occurredOn, "2026-11-22");
+  assert.equal(phoenixDeath.vehicleType, null);
+  assert.match(phoenixDeath.summary, /56/);
+  assert.match(phoenixDeath.summary, /6 a\.m\./);
+  assert.match(phoenixDeath.context, /no motor vehicle/i);
+  assert.equal(phoenixDeath.latitude, 33.58206);
+  assert.equal(phoenixDeath.longitude, -112.09126);
+  assert.equal(phoenixDeath.sourceName, "FOX 10");
+
+  const talreja = byId.get("news-243771cfe379e5ce");
+  assert.equal(talreja.victimName, "Rashil Talreja");
+  assert.equal(talreja.reviewStatus, "published");
+  const fowler = byId.get("news-23135c2acff14ac1");
+  assert.equal(fowler.reviewStatus, "published");
+  assert.equal(fowler.occurredOn, "2026-11-19");
+  const hupcey = byId.get("news-39cc0958776c0275");
+  assert.equal(hupcey.reviewStatus, "published");
+  assert.equal(hupcey.driverStatus, "charged");
+  assert.match(hupcey.summary, /Joseph Hupcey/);
+  const woodland = byId.get("news-140737f3f06c032f");
+  assert.equal(woodland.victimAgeBand, "20\u201329");
+  assert.match(woodland.summary, /20-year-old/);
+  const harrisburg = byId.get("news-ac915ddd9a92b9ab");
+  assert.equal(harrisburg.occurredOn, "2026-11-20");
+  assert.equal(harrisburg.roadwayType, "Maclay Street");
+
+  const publishedRows = [manhattan, fresno, culver, glenEllyn, yuma, florhamNew];
+  assert.equal(publishedRows.filter((row) => row.outcome === "killed").length, 4);
+  assert.equal(publishedRows.filter((row) => row.outcome === "serious_injury").length, 2);
+  assert.ok(publishedRows.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(publishedRows.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(eureka.reviewStatus, "pending");
+  assert.equal(phoenixDeath.reviewStatus, "pending");
+  assert.equal(news.filter((row) => row.victimName === "Jhon Wang").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Christopher David Callaway").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Rashil Talreja").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Zane Fowler").length, 1);
+  assert.equal(news.filter((row) => row.city === "Fresno").length, 1);
+  assert.equal(news.filter((row) => row.city === "Manhattan").length, 1);
+  assert.equal(news.filter((row) => row.city === "Culver City").length, 1);
+  assert.equal(news.filter((row) => row.city === "Glen Ellyn").length, 1);
+  assert.equal(news.filter((row) => row.city === "Yuma").length, 1);
+  assert.equal(news.filter((row) => row.city === "Eureka").length, 1);
+  assert.equal(news.filter((row) => row.city === "Florham Park").length, 2);
+  assert.equal(news.filter((row) => row.city === "Woodland Hills").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Dallin Persons").length, 0);
+  assert.equal(news.filter((row) => row.victimName === "Vincent Stanley Benfell").length, 0);
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...publishedRows, eureka, phoenixDeath, talreja, fowler, hupcey]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
