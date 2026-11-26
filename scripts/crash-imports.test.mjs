@@ -3404,7 +3404,7 @@ test("Nov 24 2026 desk sweep publishes confirmed crashes and queues the undated 
   assert.equal(news.filter((row) => row.city === "Broward County").length, 1);
   assert.equal(news.filter((row) => row.city === "Milford").length, 1);
   assert.equal(news.filter((row) => row.city === "Victorville").length, 1);
-  assert.equal(news.filter((row) => row.city === "Jacksonville").length, 1);
+  assert.equal(news.filter((row) => row.city === "Jacksonville").length, 2);
   assert.equal(news.filter((row) => row.city === "Levittown").length, 1);
   assert.equal(news.filter((row) => row.city === "Westchester" && row.occurredOn === "2026-11-20").length, 1);
   assert.equal(news.filter((row) => row.city === "Oceanside").length, 1);
@@ -3432,7 +3432,7 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(manhattan.severity, "critical");
   assert.equal(manhattan.fatalities, 1);
   assert.equal(manhattan.injured, 0);
-  assert.equal(manhattan.victimName, null);
+  assert.equal(manhattan.victimName, "Dhruv Rana");
   assert.equal(manhattan.victimAgeBand, "20\u201329");
   assert.equal(manhattan.city, "Manhattan");
   assert.equal(manhattan.stateCode, "NY");
@@ -3444,12 +3444,12 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(manhattan.lighting, "dark");
   assert.match(manhattan.summary, /Citi Bike/);
   assert.match(manhattan.summary, /6:50 p\.m\./);
-  assert.match(manhattan.summary, /not released/);
+  assert.match(manhattan.summary, /Dhruv Rana/);
   assert.match(manhattan.summary, /23-year-old/);
   assert.equal(manhattan.latitude, 40.73975);
   assert.equal(manhattan.longitude, -74.00252);
   assert.equal(manhattan.sourceName, "New York Post");
-  assert.equal(news[0].id, manhattan.id);
+  assert.ok(news[0].occurredOn >= manhattan.occurredOn);
 
   const fresno = byId.get("news-fa6fccdb7ea87a2a");
   assert.equal(fresno.reviewStatus, "published");
@@ -3458,8 +3458,8 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(fresno.severity, "critical");
   assert.equal(fresno.fatalities, 1);
   assert.equal(fresno.injured, 0);
-  assert.equal(fresno.victimName, null);
-  assert.equal(fresno.victimAgeBand, "50\u201359");
+  assert.equal(fresno.victimName, "Arthur Warren");
+  assert.equal(fresno.victimAgeBand, "60\u201369");
   assert.equal(fresno.city, "Fresno");
   assert.equal(fresno.stateCode, "CA");
   assert.equal(fresno.region, "West");
@@ -3468,13 +3468,13 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(fresno.driverStatus, "fled");
   assert.equal(fresno.vehicleType, "car");
   assert.equal(fresno.lighting, "dark");
-  assert.match(fresno.summary, /7 p\.m\./);
-  assert.match(fresno.summary, /not released/);
+  assert.match(fresno.summary, /6:41 p\.m\./);
+  assert.match(fresno.summary, /Arthur Warren/);
   assert.match(fresno.summary, /red light/);
   assert.match(fresno.context, /no vehicle description/);
   assert.equal(fresno.latitude, 36.71415);
   assert.equal(fresno.longitude, -119.79074);
-  assert.equal(fresno.sourceName, "Your Central Valley");
+  assert.equal(fresno.sourceName, "KMPH");
 
   const culver = byId.get("news-5a385195aa0522ac");
   assert.equal(culver.reviewStatus, "published");
@@ -3483,7 +3483,7 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(culver.severity, "critical");
   assert.equal(culver.fatalities, 1);
   assert.equal(culver.injured, 0);
-  assert.equal(culver.victimName, null);
+  assert.equal(culver.victimName, "Lorelei Laird");
   assert.equal(culver.victimAgeBand, "40\u201349");
   assert.equal(culver.city, "Culver City");
   assert.equal(culver.stateCode, "CA");
@@ -3492,9 +3492,9 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(culver.driverStatus, "at_scene");
   assert.equal(culver.crashType, "intersection");
   assert.equal(culver.lighting, "daylight");
-  assert.match(culver.summary, /40s/);
+  assert.match(culver.summary, /47/);
   assert.match(culver.summary, /Nov\. 23/);
-  assert.match(culver.summary, /not released/);
+  assert.match(culver.summary, /Lorelei Laird/);
   assert.match(culver.context, /Braddock Drive/);
   assert.equal(culver.latitude, 34.00289);
   assert.equal(culver.longitude, -118.40682);
@@ -3647,6 +3647,181 @@ test("Nov 25 2026 desk sweep publishes confirmed crashes and queues the incomple
   assert.equal(ids.size, news.length);
   const prepared = prepareImports(root);
   for (const row of [...publishedRows, eureka, phoenixDeath, talreja, fowler, hupcey]) {
+    assert.ok(
+      prepared.news.some((item) => item.id === row.id),
+      row.id,
+    );
+  }
+});
+
+test("Nov 26 2026 desk sweep publishes confirmed crashes and keeps the incomplete ones pending", () => {
+  const news = JSON.parse(readFileSync(join(root, "data/crash-imports/news.json"), "utf8"));
+  const byId = new Map(news.map((row) => [row.id, row]));
+
+  const ormond = byId.get("news-a84ee5d9337040f5");
+  assert.equal(ormond.reviewStatus, "published");
+  assert.equal(ormond.verified, true);
+  assert.equal(ormond.outcome, "killed");
+  assert.equal(ormond.severity, "critical");
+  assert.equal(ormond.fatalities, 1);
+  assert.equal(ormond.injured, 0);
+  assert.equal(ormond.victimName, "Robert Jeffrey Real");
+  assert.equal(ormond.victimAgeBand, "70\u201379");
+  assert.equal(ormond.city, "Ormond Beach");
+  assert.equal(ormond.stateCode, "FL");
+  assert.equal(ormond.region, "South");
+  assert.equal(ormond.occurredOn, "2026-11-20");
+  assert.equal(ormond.crashType, "other");
+  assert.equal(ormond.vehicleType, "SUV");
+  assert.equal(ormond.driverStatus, "at_scene");
+  assert.equal(ormond.lighting, "dark");
+  assert.equal(ormond.roadwayType, "South Nova Road");
+  assert.match(ormond.summary, /79/);
+  assert.match(ormond.summary, /outside travel lane/);
+  assert.equal(ormond.latitude, 29.27731);
+  assert.equal(ormond.longitude, -81.08296);
+  assert.equal(ormond.locationPrecision, "town");
+  assert.equal(ormond.sourceName, "Observer Local News");
+
+  const waldorf = byId.get("news-83472afd2cb620d5");
+  assert.equal(waldorf.reviewStatus, "published");
+  assert.equal(waldorf.verified, true);
+  assert.equal(waldorf.outcome, "serious_injury");
+  assert.equal(waldorf.severity, "low");
+  assert.equal(waldorf.injured, 1);
+  assert.equal(waldorf.fatalities, 0);
+  assert.equal(waldorf.victimName, null);
+  assert.equal(waldorf.city, "Waldorf");
+  assert.equal(waldorf.stateCode, "MD");
+  assert.equal(waldorf.region, "South");
+  assert.equal(waldorf.occurredOn, "2026-11-25");
+  assert.equal(waldorf.crashType, "intersection");
+  assert.equal(waldorf.lighting, "daylight");
+  assert.match(waldorf.summary, /2:23 p\.m\./);
+  assert.match(waldorf.summary, /priority 3/);
+  assert.match(waldorf.context, /no pin/);
+  assert.equal(waldorf.latitude, null);
+  assert.equal(waldorf.longitude, null);
+  assert.equal(waldorf.sourceName, "The BayNet");
+  assert.equal(news[0].id, waldorf.id);
+
+  const citrus = byId.get("news-4c57407f8d3b2cce");
+  assert.equal(citrus.reviewStatus, "published");
+  assert.equal(citrus.verified, true);
+  assert.equal(citrus.outcome, "serious_injury");
+  assert.equal(citrus.severity, "low");
+  assert.equal(citrus.injured, 1);
+  assert.equal(citrus.victimName, null);
+  assert.equal(citrus.city, "Citrus Heights");
+  assert.equal(citrus.stateCode, "CA");
+  assert.equal(citrus.region, "West");
+  assert.equal(citrus.occurredOn, "2026-11-24");
+  assert.equal(citrus.crashType, "right-hook");
+  assert.equal(citrus.driverStatus, "at_scene");
+  assert.equal(citrus.lighting, "dark");
+  assert.match(citrus.summary, /minor/);
+  assert.match(citrus.summary, /6 p\.m\./);
+  assert.match(citrus.summary, /juvenile/);
+  assert.equal(citrus.latitude, 38.67832);
+  assert.equal(citrus.longitude, -121.29245);
+  assert.equal(citrus.sourceName, "Citrus Heights Sentinel");
+
+  const wyckoff = byId.get("news-5ab2de24b6a9681b");
+  assert.equal(wyckoff.reviewStatus, "published");
+  assert.equal(wyckoff.verified, true);
+  assert.equal(wyckoff.outcome, "serious_injury");
+  assert.equal(wyckoff.severity, "moderate");
+  assert.equal(wyckoff.injured, 1);
+  assert.equal(wyckoff.victimName, null);
+  assert.equal(wyckoff.victimAgeBand, "50\u201359");
+  assert.equal(wyckoff.city, "Wyckoff");
+  assert.equal(wyckoff.stateCode, "NJ");
+  assert.equal(wyckoff.region, "Northeast");
+  assert.equal(wyckoff.occurredOn, "2026-11-21");
+  assert.equal(wyckoff.vehicleType, "car");
+  assert.equal(wyckoff.driverStatus, "at_scene");
+  assert.equal(wyckoff.lighting, "daylight");
+  assert.match(wyckoff.summary, /Mustang/);
+  assert.match(wyckoff.summary, /3 p\.m\./);
+  assert.match(wyckoff.summary, /not released/);
+  assert.match(wyckoff.context, /SUV/);
+  assert.equal(wyckoff.latitude, 41.02056);
+  assert.equal(wyckoff.longitude, -74.1672);
+  assert.equal(wyckoff.sourceName, "TAPinto");
+
+  const atlantic = byId.get("news-b518a86415e3d86d");
+  assert.equal(atlantic.reviewStatus, "published");
+  assert.equal(atlantic.verified, true);
+  assert.equal(atlantic.outcome, "serious_injury");
+  assert.equal(atlantic.severity, "high");
+  assert.equal(atlantic.injured, 4);
+  assert.equal(atlantic.fatalities, 0);
+  assert.equal(atlantic.victimName, null);
+  assert.equal(atlantic.city, "Jacksonville");
+  assert.equal(atlantic.stateCode, "FL");
+  assert.equal(atlantic.region, "South");
+  assert.equal(atlantic.occurredOn, "2026-11-21");
+  assert.equal(atlantic.crashType, "hit-and-run");
+  assert.equal(atlantic.driverStatus, "charged");
+  assert.equal(atlantic.vehicleType, "car");
+  assert.equal(atlantic.helmet, "no");
+  assert.equal(atlantic.lighting, "dark");
+  assert.match(atlantic.summary, /Kyle Kenneth Roman/);
+  assert.match(atlantic.summary, /7:20 p\.m\./);
+  assert.match(atlantic.context, /Indian Springs Road/);
+  assert.match(atlantic.context, /Shindler Drive/);
+  assert.equal(atlantic.latitude, 30.31934);
+  assert.equal(atlantic.longitude, -81.46993);
+  assert.equal(atlantic.sourceName, "News4JAX");
+
+  const shindler = byId.get("news-5ae406301eacfc47");
+  assert.equal(shindler.reviewStatus, "pending");
+  assert.equal(shindler.verified, false);
+  assert.equal(shindler.datePrecision, "published");
+  assert.equal(shindler.roadwayType, "Shindler Drive");
+  assert.match(shindler.context, /does not state a crash date/);
+  assert.match(shindler.context, /different event/);
+
+  const phoenixDeath = byId.get("news-6c8373ee0e5c662e");
+  assert.equal(phoenixDeath.reviewStatus, "pending");
+  assert.equal(phoenixDeath.verified, false);
+  assert.equal(phoenixDeath.victimName, "Christopher David Callaway");
+  assert.equal(phoenixDeath.vehicleType, null);
+  assert.match(phoenixDeath.context, /no motor vehicle/i);
+  assert.match(phoenixDeath.context, /YourValley/);
+
+  const culver = byId.get("news-5a385195aa0522ac");
+  assert.equal(culver.victimName, "Lorelei Laird");
+  const fresno = byId.get("news-fa6fccdb7ea87a2a");
+  assert.equal(fresno.victimName, "Arthur Warren");
+  assert.equal(fresno.victimAgeBand, "60\u201369");
+  const manhattan = byId.get("news-4503b525e2316a02");
+  assert.equal(manhattan.victimName, "Dhruv Rana");
+  const woodland = byId.get("news-140737f3f06c032f");
+  assert.equal(woodland.occurredOn, "2026-11-03");
+  assert.equal(woodland.city, "Woodland Hills");
+
+  const publishedRows = [ormond, waldorf, citrus, wyckoff, atlantic];
+  assert.equal(publishedRows.filter((row) => row.outcome === "killed").length, 1);
+  assert.equal(publishedRows.filter((row) => row.outcome === "serious_injury").length, 4);
+  assert.ok(publishedRows.every((row) => row.verified === true && row.reviewStatus === "published"));
+  assert.ok(publishedRows.every((row) => row.ingestSource === "news" && row.datePrecision === "day"));
+  assert.equal(news.filter((row) => row.victimName === "Robert Jeffrey Real").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Lorelei Laird").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Arthur Warren").length, 1);
+  assert.equal(news.filter((row) => row.victimName === "Dhruv Rana").length, 1);
+  assert.equal(news.filter((row) => row.city === "Ormond Beach").length, 1);
+  assert.equal(news.filter((row) => row.city === "Waldorf").length, 1);
+  assert.equal(news.filter((row) => row.city === "Citrus Heights").length, 1);
+  assert.equal(news.filter((row) => row.city === "Wyckoff").length, 1);
+  assert.equal(news.filter((row) => row.city === "Jacksonville").length, 2);
+  assert.equal(news.filter((row) => row.city === "Woodland Hills").length, 1);
+  assert.equal(news.filter((row) => row.city === "Florham Park").length, 2);
+
+  const ids = new Set(news.map((row) => row.id));
+  assert.equal(ids.size, news.length);
+  const prepared = prepareImports(root);
+  for (const row of [...publishedRows, shindler, phoenixDeath, culver, fresno, manhattan]) {
     assert.ok(
       prepared.news.some((item) => item.id === row.id),
       row.id,
